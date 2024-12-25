@@ -9,10 +9,10 @@
             "problemMatcher": [],
             "group": "build",
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true,
-                "clear": true
+                // "reveal": "silent",
+                // "revealProblems": "onProblem",
+                // "close": true,
+                // "clear": true
             }
         },
         {
@@ -21,10 +21,10 @@
             "command": "zig test -femit-bin=zig-out/bin/test --test-no-exec src/test.zig",
             "group": "build",
             "presentation": {
-                "reveal": "silent",
-                "revealProblems": "onProblem",
-                "close": true,
-                "clear": true
+                // "reveal": "silent",
+                // "revealProblems": "onProblem",
+                // "close": true,
+                // "clear": true
             }
         }
     ]
