@@ -38,32 +38,13 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
                 .startTime = startTime,
             };
 
-            // for (0..mapHeight) |hInd| {
-            //     for (0..mapWidth) |wInd| {
-            //         if (hInd == 0 and wInd >= mapWidth / 3 and wInd <= mapWidth * 2 / 3) {
-            //             new.map[hInd][wInd].type = PixelType.sand;
-            //         }
-            //     }
-            // }
-
-            const wInd = new.mapHeight / 2;
-            for (0..15) |hInd| {
-                new.map[hInd][wInd].type = PixelType.sand;
-            }
-
-            const pileWidth = 20;
-            const pileHeight = 8;
-            var wStart = new.mapWidth / 2 - pileWidth / 2;
-            var wEnd = wStart + pileWidth;
-            var hCurr = new.mapHeight - 1;
-            const hEnd = new.mapHeight - pileHeight;
-            while (hCurr - hEnd > 0) {
-                for (wStart..wEnd) |wCurr| {
-                    new.map[hCurr][wCurr].type = PixelType.sand;
+            const width = 4;
+            const wStart = new.mapHeight / 2 - width / 2;
+            const wEnd = new.mapHeight / 2 + width / 2;
+            for (0..30) |hInd| {
+                for (wStart..wEnd) |wInd| {
+                    new.map[hInd][wInd].type = PixelType.sand;
                 }
-                hCurr -= 1;
-                wStart += 1;
-                wEnd -= 1;
             }
 
             return new;
@@ -77,9 +58,10 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
             while (it.next()) |entry| {
                 const pixel = entry.key;
                 const pixelLastTick = self.lastTick.get(pixel);
+                const pixelFreq = pixel.freq();
                 // const tickRemainder = self.tickRemainder.get(Pixel.sand);
 
-                if (elapsed < pixelLastTick + pixel.freq()) {
+                if (elapsed > pixelLastTick + pixelFreq) {
                     simThisTick.set(pixel, true);
                     self.lastTick.set(pixel, elapsed);
                     // const newTickRemainder = elapsed - lastTick; - Pixel.sand.freq();
@@ -135,7 +117,7 @@ const PixelType = enum(u8) {
     pub fn freq(self: PixelType) u64 {
         return switch (self) {
             // Pixel.sand => 1 * std.time.ns_per_s,
-            else => 1 * std.time.ns_per_s,
+            else => 100 * std.time.ns_per_ms,
         };
     }
 };
@@ -150,11 +132,10 @@ pub const State = GameState(SCREEN_WIDTH, SCREEN_HEIGHT, 8);
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-
     rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
-    rl.setTargetFPS(5); // Set our game to run at 60 frames-per-second
+    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -168,7 +149,6 @@ pub fn main() !void {
         //----------------------------------------------------------------------------------
         // const dt = rl.getFrameTime();
         try state.simulate();
-
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -192,8 +172,6 @@ pub fn main() !void {
                 state.map[hInd][wInd].dirty = false;
             }
         }
-
-        // rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
         //----------------------------------------------------------------------------------
     }
 }
