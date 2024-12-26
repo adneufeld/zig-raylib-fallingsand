@@ -4,17 +4,18 @@ const rl = @import("raylib");
 const Allocator = std.mem.Allocator;
 const Instant = std.time.Instant;
 
-const PixelTime = std.EnumArray(PixelType, u64);
-const PixelSimTick = std.EnumArray(PixelType, bool);
+const ParticleTime = std.EnumArray(ParticleType, u64);
+const ParticleSimTick = std.EnumArray(ParticleType, bool);
 
 const SCREEN_WIDTH = 800;
 const SCREEN_HEIGHT = 456;
 
 pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime tileSize: u8) type {
+    const mapWidth = screenWidth / tileSize;
+    const mapHeight = screenHeight / tileSize;
+
     return struct {
         const Self = @This();
-        const mapWidth = screenWidth / tileSize;
-        const mapHeight = screenHeight / tileSize;
 
         alloc: Allocator,
 
@@ -23,13 +24,13 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
 
         mapWidth: u16 = mapWidth,
         mapHeight: u16 = mapHeight,
-        map: [mapHeight][mapWidth]Pixel = undefined,
+        map: [mapHeight][mapWidth]Particle = undefined,
 
         tileSize: u8 = tileSize,
 
         startTime: Instant,
-        lastTick: PixelTime = undefined,
-        // tickRemainder: PixelTime = undefined,
+        lastTick: ParticleTime = undefined,
+        // tickRemainder: ParticleTime = undefined,
 
         pub fn init(alloc: Allocator) !Self {
             const startTime = try Instant.now();
@@ -43,7 +44,7 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
             const wEnd = new.mapHeight / 2 + width / 2;
             for (0..30) |hInd| {
                 for (wStart..wEnd) |wInd| {
-                    new.map[hInd][wInd].type = PixelType.sand;
+                    new.map[hInd][wInd].type = ParticleType.sand;
                 }
             }
 
@@ -51,30 +52,32 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
         }
 
         pub fn simulate(self: *Self) !void {
-            var simThisTick: PixelSimTick = PixelSimTick.initFill(false);
             const elapsed = (try Instant.now()).since(self.startTime);
 
+            // for each particle type determine whether it should simulate this tick based on it's frequency
+            var simThisTick: ParticleSimTick = ParticleSimTick.initFill(false);
             var it = simThisTick.iterator();
             while (it.next()) |entry| {
-                const pixel = entry.key;
-                const pixelLastTick = self.lastTick.get(pixel);
-                const pixelFreq = pixel.freq();
-                // const tickRemainder = self.tickRemainder.get(Pixel.sand);
+                const particle = entry.key;
+                const particleLastTick = self.lastTick.get(particle);
+                const particleFreq = particle.freq();
+                // const tickRemainder = self.tickRemainder.get(Particle.sand);
 
-                if (elapsed > pixelLastTick + pixelFreq) {
-                    simThisTick.set(pixel, true);
-                    self.lastTick.set(pixel, elapsed);
-                    // const newTickRemainder = elapsed - lastTick; - Pixel.sand.freq();
-                    // self.tickRemainder.set(Pixel.sand, newTickRemainder);
+                if (elapsed > particleLastTick + particleFreq) {
+                    simThisTick.set(particle, true);
+                    self.lastTick.set(particle, elapsed);
+                    // const newTickRemainder = elapsed - lastTick; - Particle.sand.freq();
+                    // self.tickRemainder.set(Particle.sand, newTickRemainder);
                 }
             }
 
+            // do the simulation bottom to top for falling particles
             var h: i32 = @as(i32, self.mapHeight) - 1;
             while (h >= 0) : (h -= 1) {
                 const hInd: usize = @intCast(h);
                 for (0..self.mapWidth) |wInd| {
                     switch (self.map[hInd][wInd].type) {
-                        PixelType.sand => if (simThisTick.get(PixelType.sand)) self.sand(wInd, hInd),
+                        ParticleType.sand => if (simThisTick.get(ParticleType.sand)) self.sand(wInd, hInd),
                         else => continue,
                     }
                 }
@@ -91,10 +94,10 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
             };
 
             for (targets) |t| {
-                if (self.map[t.y][t.x].type == PixelType.none and self.map[t.y][t.x].dirty == false) {
-                    self.map[y][x].type = PixelType.none;
+                if (self.map[t.y][t.x].type == ParticleType.none and self.map[t.y][t.x].dirty == false) {
+                    self.map[y][x].type = ParticleType.none;
                     // self.map[y][x].dirty = true;
-                    self.map[t.y][t.x].type = PixelType.sand;
+                    self.map[t.y][t.x].type = ParticleType.sand;
                     // self.map[t.y][t.x].dirty = true;
                     return;
                 }
@@ -103,27 +106,27 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
     };
 }
 
-const PixelType = enum(u8) {
+const ParticleType = enum(u8) {
     none = 0,
     sand,
 
-    pub fn color(self: PixelType) rl.Color {
+    pub fn color(self: ParticleType) rl.Color {
         return switch (self) {
-            PixelType.none => rl.Color.black,
-            PixelType.sand => rl.Color.init(191, 164, 94, 255),
+            ParticleType.none => rl.Color.black,
+            ParticleType.sand => rl.Color.init(191, 164, 94, 255),
         };
     }
 
-    pub fn freq(self: PixelType) u64 {
+    pub fn freq(self: ParticleType) u64 {
         return switch (self) {
-            // Pixel.sand => 1 * std.time.ns_per_s,
+            // Particle.sand => 1 * std.time.ns_per_s,
             else => 100 * std.time.ns_per_ms,
         };
     }
 };
 
-const Pixel = struct {
-    type: PixelType = PixelType.none,
+const Particle = struct {
+    type: ParticleType = ParticleType.none,
     dirty: bool = false,
 };
 
