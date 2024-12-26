@@ -7,6 +7,9 @@ const Instant = std.time.Instant;
 const PixelTime = std.EnumArray(PixelType, u64);
 const PixelSimTick = std.EnumArray(PixelType, bool);
 
+const SCREEN_WIDTH = 800;
+const SCREEN_HEIGHT = 456;
+
 pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime tileSize: u8) type {
     return struct {
         const Self = @This();
@@ -15,7 +18,8 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
 
         alloc: Allocator,
 
-        startTime: Instant,
+        screenWidth: u16 = screenWidth,
+        screenHeight: u16 = screenHeight,
 
         mapWidth: u16 = mapWidth,
         mapHeight: u16 = mapHeight,
@@ -23,6 +27,7 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
 
         tileSize: u8 = tileSize,
 
+        startTime: Instant,
         lastTick: PixelTime = undefined,
         // tickRemainder: PixelTime = undefined,
 
@@ -33,12 +38,32 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
                 .startTime = startTime,
             };
 
-            for (0..mapHeight) |hInd| {
-                for (0..mapWidth) |wInd| {
-                    if (hInd == 0 and wInd >= mapWidth / 3 and wInd <= mapWidth * 2 / 3) {
-                        new.map[hInd][wInd].type = PixelType.sand;
-                    }
+            // for (0..mapHeight) |hInd| {
+            //     for (0..mapWidth) |wInd| {
+            //         if (hInd == 0 and wInd >= mapWidth / 3 and wInd <= mapWidth * 2 / 3) {
+            //             new.map[hInd][wInd].type = PixelType.sand;
+            //         }
+            //     }
+            // }
+
+            const wInd = new.mapHeight / 2;
+            for (0..15) |hInd| {
+                new.map[hInd][wInd].type = PixelType.sand;
+            }
+
+            const pileWidth = 20;
+            const pileHeight = 8;
+            var wStart = new.mapWidth / 2 - pileWidth / 2;
+            var wEnd = wStart + pileWidth;
+            var hCurr = new.mapHeight - 1;
+            const hEnd = new.mapHeight - pileHeight;
+            while (hCurr - hEnd > 0) {
+                for (wStart..wEnd) |wCurr| {
+                    new.map[hCurr][wCurr].type = PixelType.sand;
                 }
+                hCurr -= 1;
+                wStart += 1;
+                wEnd -= 1;
             }
 
             return new;
@@ -62,7 +87,9 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
                 }
             }
 
-            for (0..self.mapHeight) |hInd| {
+            var h: i32 = @as(i32, self.mapHeight) - 1;
+            while (h >= 0) : (h -= 1) {
+                const hInd: usize = @intCast(h);
                 for (0..self.mapWidth) |wInd| {
                     switch (self.map[hInd][wInd].type) {
                         PixelType.sand => if (simThisTick.get(PixelType.sand)) self.sand(wInd, hInd),
@@ -74,11 +101,21 @@ pub fn GameState(comptime screenWidth: u16, comptime screenHeight: u16, comptime
 
         fn sand(self: *Self, x: usize, y: usize) void {
             if (y + 1 >= self.mapHeight or self.map[y][x].dirty == true) return;
-            if (self.map[y + 1][x].type == PixelType.none and self.map[y + 1][x].dirty == false) {
-                self.map[y][x].type = PixelType.none;
-                self.map[y][x].dirty = true;
-                self.map[y + 1][x].type = PixelType.sand;
-                self.map[y + 1][x].dirty = true;
+
+            const targets = [3]struct { x: usize, y: usize }{
+                .{ .x = x, .y = y + 1 }, // down
+                .{ .x = x - 1, .y = y + 1 }, // down-left
+                .{ .x = x + 1, .y = y + 1 }, // down-right
+            };
+
+            for (targets) |t| {
+                if (self.map[t.y][t.x].type == PixelType.none and self.map[t.y][t.x].dirty == false) {
+                    self.map[y][x].type = PixelType.none;
+                    // self.map[y][x].dirty = true;
+                    self.map[t.y][t.x].type = PixelType.sand;
+                    // self.map[t.y][t.x].dirty = true;
+                    return;
+                }
             }
         }
     };
@@ -108,13 +145,13 @@ const Pixel = struct {
     dirty: bool = false,
 };
 
+pub const State = GameState(SCREEN_WIDTH, SCREEN_HEIGHT, 8);
+
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const screenWidth = 800;
-    const screenHeight = 456;
 
-    rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
+    rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
     rl.setTargetFPS(5); // Set our game to run at 60 frames-per-second
@@ -123,8 +160,7 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
 
-    var state = try GameState(screenWidth, screenHeight, 8)
-        .init(arena.allocator());
+    var state = try State.init(arena.allocator());
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
