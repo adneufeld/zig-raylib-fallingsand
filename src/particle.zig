@@ -18,13 +18,4 @@ pub const Particle = enum(u8) {
             else => 100 * std.time.ns_per_ms,
         };
     }
-
-    pub fn simulate(
-        self: Particle,
-    ) void {
-        switch (self) {
-            Particle.sand => return,
-            else => return,
-        }
-    }
 };

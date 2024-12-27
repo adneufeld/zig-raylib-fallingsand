@@ -5,53 +5,70 @@ const Instant = std.time.Instant;
 const ParticleType = ptcl.Particle;
 const ParticleSimTick = std.EnumArray(ParticleType, bool);
 
-pub fn simulateParticles(comptime S: type, state: *S) !void {
-    const elapsed = (try Instant.now()).since(state.startTime);
+pub fn CellularAutomata(comptime S: type) type {
+    return struct {
+        const Self = @This();
 
-    // for each particle type determine whether it should simulate this tick based on it's frequency
-    var simThisTick: ParticleSimTick = ParticleSimTick.initFill(false);
-    var it = simThisTick.iterator();
-    while (it.next()) |entry| {
-        const particle = entry.key;
-        const particleLastTick = state.lastTick.get(particle);
-        const particleFreq = particle.freq();
-        // const tickRemainder = state.tickRemainder.get(Particle.sand);
+        state: *S,
 
-        if (elapsed > particleLastTick + particleFreq) {
-            simThisTick.set(particle, true);
-            state.lastTick.set(particle, elapsed);
-            // const newTickRemainder = elapsed - lastTick; - Particle.sand.freq();
-            // state.tickRemainder.set(Particle.sand, newTickRemainder);
+        pub fn init(state: *S) Self {
+            return Self{
+                .state = state,
+            };
         }
-    }
 
-    // do the simulation bottom to top for falling particles
-    var h: i32 = @as(i32, state.mapHeight) - 1;
-    while (h >= 0) : (h -= 1) {
-        const hInd: usize = @intCast(h);
-        for (0..state.mapWidth) |wInd| {
-            switch (state.map[hInd][wInd]) {
-                ParticleType.sand => if (simThisTick.get(ParticleType.sand)) sand(S, state, wInd, hInd),
-                else => continue,
+        pub fn simulate(self: *Self, elapsed: u64) !void {
+            var simThisTick: ParticleSimTick = self.doesParticleSimulate(elapsed);
+
+            // do the simulation bottom to top for falling particles
+            var h: i32 = @as(i32, self.state.mapHeight) - 1;
+            while (h >= 0) : (h -= 1) {
+                const hInd: usize = @intCast(h);
+                for (0..self.state.mapWidth) |wInd| {
+                    switch (self.state.map[hInd][wInd]) {
+                        ParticleType.sand => if (simThisTick.get(ParticleType.sand)) self.sand(wInd, hInd),
+                        else => continue,
+                    }
+                }
             }
         }
-    }
-}
 
-fn sand(comptime S: type, state: *S, x: usize, y: usize) void {
-    if (y + 1 >= state.mapHeight) return;
+        // Whether each particle type should simulate their cellular automata on this specific update tick
+        fn doesParticleSimulate(self: *Self, elapsed: u64) ParticleSimTick {
+            var simThisTick = ParticleSimTick.initFill(false);
+            var it = simThisTick.iterator();
+            while (it.next()) |entry| {
+                const particle = entry.key;
+                const particleLastTick = self.state.lastTick.get(particle);
+                const particleFreq = particle.freq();
+                // const tickRemainder = state.tickRemainder.get(Particle.sand);
 
-    const targets = [3]struct { x: usize, y: usize }{
-        .{ .x = x, .y = y + 1 }, // down
-        .{ .x = x - 1, .y = y + 1 }, // down-left
-        .{ .x = x + 1, .y = y + 1 }, // down-right
-    };
-
-    for (targets) |t| {
-        if (state.map[t.y][t.x] == ParticleType.none) {
-            state.map[y][x] = ParticleType.none;
-            state.map[t.y][t.x] = ParticleType.sand;
-            return;
+                if (elapsed > particleLastTick + particleFreq) {
+                    simThisTick.set(particle, true);
+                    self.state.lastTick.set(particle, elapsed);
+                    // const newTickRemainder = elapsed - lastTick; - Particle.sand.freq();
+                    // state.tickRemainder.set(Particle.sand, newTickRemainder);
+                }
+            }
+            return simThisTick;
         }
-    }
+
+        fn sand(self: *Self, x: usize, y: usize) void {
+            if (y + 1 >= self.state.mapHeight) return;
+
+            const targets = [3]struct { x: usize, y: usize }{
+                .{ .x = x, .y = y + 1 }, // down
+                .{ .x = x - 1, .y = y + 1 }, // down-left
+                .{ .x = x + 1, .y = y + 1 }, // down-right
+            };
+
+            for (targets) |t| {
+                if (self.state.map[t.y][t.x] == ParticleType.none) {
+                    self.state.map[y][x] = ParticleType.none;
+                    self.state.map[t.y][t.x] = ParticleType.sand;
+                    return;
+                }
+            }
+        }
+    };
 }

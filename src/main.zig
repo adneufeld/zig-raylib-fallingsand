@@ -22,11 +22,13 @@ pub fn main() !void {
     //--------------------------------------------------------------------------------------
 
     var game = try State.init();
+    var cells = sim.CellularAutomata(State).init(&game);
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
         // const dt = rl.getFrameTime();
-        try sim.simulateParticles(State, &game);
+        const elapsed = (try Instant.now()).since(game.startTime);
+        try cells.simulate(elapsed);
         //----------------------------------------------------------------------------------
 
         // Draw
