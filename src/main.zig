@@ -2,6 +2,7 @@ const std = @import("std");
 const rl = @import("raylib");
 const ptcl = @import("./particle.zig");
 const state = @import("./state.zig");
+const sim = @import("./sim.zig");
 
 const Allocator = std.mem.Allocator;
 const Instant = std.time.Instant;
@@ -20,17 +21,12 @@ pub fn main() !void {
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-
-    var game = try State.init(arena.allocator());
-
-    // Main game loop
+    var game = try State.init();
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
         // const dt = rl.getFrameTime();
-        try game.simulate();
+        try sim.simulateParticles(State, &game);
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -49,9 +45,8 @@ pub fn main() !void {
                     y,
                     game.tileSize,
                     game.tileSize,
-                    game.map[hInd][wInd].type.color(),
+                    game.map[hInd][wInd].color(),
                 );
-                game.map[hInd][wInd].dirty = false;
             }
         }
         //----------------------------------------------------------------------------------
