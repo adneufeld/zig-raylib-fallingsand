@@ -2,14 +2,18 @@ const std = @import("std");
 const rl = @import("raylib");
 const state = @import("./state.zig");
 const sim = @import("./sim.zig");
+const ui = @import("./ui.zig");
 
 const Allocator = std.mem.Allocator;
 const Instant = std.time.Instant;
 
+const UISystem = ui.UISystem;
+
 const SCREEN_WIDTH = 800;
 const SCREEN_HEIGHT = 456;
+const TILE_SIZE = 8;
 
-pub const State = state.State(SCREEN_WIDTH, SCREEN_HEIGHT, 8);
+pub const State = state.State(SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE);
 
 pub fn main() !void {
     // Initialization
@@ -18,16 +22,20 @@ pub fn main() !void {
     defer rl.closeWindow(); // Close window and OpenGL context
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+    rl.setExitKey(rl.KeyboardKey.key_null); // disable close on ESC
     //--------------------------------------------------------------------------------------
 
     var game = try State.init();
     var cells = sim.CellularAutomata(State).init(&game);
-    while (!rl.windowShouldClose()) { // Detect window close button or ESC key
+    var uisys = UISystem(State).init(&game);
+
+    while (!rl.windowShouldClose()) { // Detect window close button
         // Update
         //----------------------------------------------------------------------------------
         // const dt = rl.getFrameTime();
         const elapsed = (try Instant.now()).since(game.startTime);
         try cells.simulate(elapsed);
+        uisys.update(elapsed);
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -37,6 +45,7 @@ pub fn main() !void {
 
         rl.clearBackground(rl.Color.black);
 
+        // DRAW CELLS
         for (0..game.mapHeight) |hInd| {
             for (0..game.mapWidth) |wInd| {
                 const x: i32 = @as(i32, @intCast(wInd)) * game.tileSize;
@@ -51,6 +60,10 @@ pub fn main() !void {
                 game.map[hInd][wInd].dirty = false;
             }
         }
+
+        // DRAW UI
+        uisys.draw();
+
         //----------------------------------------------------------------------------------
     }
 }

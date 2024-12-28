@@ -1,4 +1,5 @@
 const std = @import("std");
+const ui = @import("./ui.zig");
 const sim = @import("./sim.zig");
 
 const Allocator = std.mem.Allocator;
@@ -7,6 +8,7 @@ const Instant = std.time.Instant;
 const Cell = sim.Cell;
 const CellType = sim.CellType;
 const CellTime = std.EnumArray(CellType, u64);
+const UIState = ui.UIState;
 
 pub fn State(comptime screenWidth: u16, comptime screenHeight: u16, comptime tileSize: u8) type {
     const mapWidth = screenWidth / tileSize;
@@ -27,6 +29,12 @@ pub fn State(comptime screenWidth: u16, comptime screenHeight: u16, comptime til
         startTime: Instant,
         lastTick: CellTime = undefined,
         // tickRemainder: CellTime = undefined,
+
+        ui: UIState = UIState{},
+
+        // TODO - add time control for speed & pause
+
+        // TODO - add undo
 
         pub fn init() !Self {
             const startTime = try Instant.now();
