@@ -12,6 +12,8 @@ const UISystem = ui.UISystem;
 const SCREEN_WIDTH = 800;
 const SCREEN_HEIGHT = 456;
 const TILE_SIZE = 8;
+// const MAP_WIDTH = SCREEN_WIDTH / TILE_SIZE;
+// const MAP_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
 
 pub const State = state.State(SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE);
 

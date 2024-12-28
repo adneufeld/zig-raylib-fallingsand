@@ -19,6 +19,7 @@ pub fn UISystem(comptime S: type) type {
         drawCursor: bool = false,
         cursorColor: rl.Color = undefined,
         cursorRadius: f32 = 20,
+        keyTextSize: i32 = 18,
 
         pub fn init(state: *S) Self {
             return Self{
@@ -52,6 +53,16 @@ pub fn UISystem(comptime S: type) type {
         }
 
         pub fn draw(self: *Self) void {
+            const keyText = "[S]and  [W]ater [Esc]Clear";
+            const txtLen = rl.measureText(keyText, self.keyTextSize);
+            rl.drawText(
+                keyText,
+                self.state.screenWidth / 2 - @divFloor(txtLen, 2),
+                self.state.screenHeight - self.keyTextSize,
+                self.keyTextSize,
+                rl.Color.white,
+            );
+
             if (self.drawCursor and rl.isCursorOnScreen()) {
                 const mx = rl.getMouseX();
                 const my = rl.getMouseY();
