@@ -1,6 +1,5 @@
 const std = @import("std");
 const rl = @import("raylib");
-const ptcl = @import("./particle.zig");
 const state = @import("./state.zig");
 const sim = @import("./sim.zig");
 
@@ -47,8 +46,9 @@ pub fn main() !void {
                     y,
                     game.tileSize,
                     game.tileSize,
-                    game.map[hInd][wInd].color(),
+                    game.map[hInd][wInd].type.color(),
                 );
+                game.map[hInd][wInd].dirty = false;
             }
         }
         //----------------------------------------------------------------------------------
