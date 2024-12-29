@@ -26,6 +26,19 @@
                 // "close": true,
                 // "clear": true
             }
-        }
+        },
+        {
+            "label": "test current file",
+            "type": "shell",
+            "command": "zig test .\\${relativeFile}",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "group": {
+                "kind": "build",
+            }
+        },
     ]
 }

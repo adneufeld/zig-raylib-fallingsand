@@ -7,35 +7,34 @@ const ui = @import("./ui.zig");
 const Allocator = std.mem.Allocator;
 const Instant = std.time.Instant;
 
+const GameState = state.GameState;
 const UISystem = ui.UISystem;
-
-const SCREEN_WIDTH = 800;
-const SCREEN_HEIGHT = 456;
-const TILE_SIZE = 8;
-// const MAP_WIDTH = SCREEN_WIDTH / TILE_SIZE;
-// const MAP_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
-
-pub const State = state.State(SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE);
 
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    rl.initWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "raylib-zig [core] example - basic window");
+    var game = try GameState.init();
+    rl.initWindow(game.screenWidth, game.screenHeight, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     rl.setExitKey(rl.KeyboardKey.key_null); // disable close on ESC
     //--------------------------------------------------------------------------------------
 
-    var game = try State.init();
-    var cells = sim.CellularAutomata(State).init(&game);
-    var uisys = UISystem(State).init(&game);
+    var cells = sim.CellularAutomata(GameState).init(&game);
+    var uisys = UISystem(GameState).init(&game);
 
     while (!rl.windowShouldClose()) { // Detect window close button
+        // Input
+        // ---------------------------------------------------------------------------------
+        uisys.input();
+        // ---------------------------------------------------------------------------------
+
         // Update
         //----------------------------------------------------------------------------------
         // const dt = rl.getFrameTime();
         const elapsed = (try Instant.now()).since(game.startTime);
+
         try cells.simulate(elapsed);
         uisys.update(elapsed);
         //----------------------------------------------------------------------------------

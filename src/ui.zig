@@ -1,9 +1,11 @@
 const rl = @import("raylib");
 const sim = @import("./sim.zig");
+const cmd = @import("./cmd.zig");
+const ds = @import("./datastructs.zig");
 
-pub const UIState = struct {
-    cursor: Cursor = Cursor.none,
-};
+const CellType = sim.CellType;
+
+pub const UIState = struct {};
 
 pub const Cursor = enum {
     none,
@@ -17,9 +19,11 @@ pub fn UISystem(comptime S: type) type {
         state: *S,
 
         drawCursor: bool = false,
-        cursorColor: rl.Color = undefined,
         cursorRadius: f32 = 20,
+        cursorType: CellType = CellType.none,
         keyTextSize: i32 = 18,
+
+        const backgroundColor = rl.Color.init(0, 0, 0, 255 / 2);
 
         pub fn init(state: *S) Self {
             return Self{
@@ -28,37 +32,50 @@ pub fn UISystem(comptime S: type) type {
         }
 
         pub fn update(self: *Self, elapsed: u64) void {
+            _ = self;
             _ = elapsed;
-
-            self.input();
         }
 
-        fn input(self: *Self) void {
+        pub fn input(self: *Self) void {
+            if (self.cursorType != CellType.none and rl.isMouseButtonReleased(rl.MouseButton.mouse_button_left)) {
+                self.state.cmd.queue.push(cmd.Cmd{ .addCells = cmd.AddCellsCmd{
+                    .type = self.cursorType,
+                    .pt = ds.PointU16{ .x = 20, .y = 20 },
+                    .radius = self.cursorRadius,
+                } });
+            }
+
             if (rl.isKeyPressed(rl.KeyboardKey.key_escape)) {
                 self.drawCursor = false;
-                self.cursorColor = undefined;
-                self.state.ui.cursor = Cursor.none;
+                self.cursorType = CellType.none;
             }
+
             if (rl.isKeyPressed(rl.KeyboardKey.key_s)) {
                 self.drawCursor = true;
-                self.cursorColor = sim.CellType.sand.color();
-                self.cursorColor.a /= 2;
-                self.state.ui.cursor = Cursor.addCells;
+                self.cursorType = CellType.sand;
             } else if (rl.isKeyPressed(rl.KeyboardKey.key_w)) {
                 self.drawCursor = true;
-                self.cursorColor = sim.CellType.water.color();
-                self.cursorColor.a /= 2;
-                self.state.ui.cursor = Cursor.addCells;
+                self.cursorType = CellType.water;
             }
         }
 
         pub fn draw(self: *Self) void {
             const keyText = "[S]and  [W]ater [Esc]Clear";
             const txtLen = rl.measureText(keyText, self.keyTextSize);
+            const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
+            const textY = self.state.screenHeight - self.keyTextSize;
+
+            rl.drawRectangle(
+                textX - 5,
+                textY - 5,
+                txtLen + 10,
+                self.keyTextSize + 5,
+                backgroundColor,
+            );
             rl.drawText(
                 keyText,
-                self.state.screenWidth / 2 - @divFloor(txtLen, 2),
-                self.state.screenHeight - self.keyTextSize,
+                textX,
+                textY,
                 self.keyTextSize,
                 rl.Color.white,
             );
@@ -66,7 +83,9 @@ pub fn UISystem(comptime S: type) type {
             if (self.drawCursor and rl.isCursorOnScreen()) {
                 const mx = rl.getMouseX();
                 const my = rl.getMouseY();
-                rl.drawCircle(mx, my, self.cursorRadius, self.cursorColor);
+                var color = self.cursorType.color();
+                color.a /= 2;
+                rl.drawCircle(mx, my, self.cursorRadius, color);
             }
         }
     };
