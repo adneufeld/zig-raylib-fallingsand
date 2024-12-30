@@ -24,7 +24,9 @@ pub fn DropQueue(comptime T: type, capacity: usize) type {
         }
 
         // pop off the next items from the front
-        pub fn front(self: *Self) T {
+        pub fn front(self: *Self) ?T {
+            if (self.size <= 0) return null;
+
             const item = self.items[0];
             self.size -= 1;
 
@@ -57,23 +59,47 @@ test "DropQueue simple usage" {
     queue.push(11111);
     try expectEqual(queue.size, 5);
 
-    try expectEqual(queue.front(), 10);
+    try expectEqual(queue.front().?, 10);
     try expectEqual(queue.size, 4);
-    try expectEqual(queue.front(), 20);
+    try expectEqual(queue.front().?, 20);
     try expectEqual(queue.size, 3);
-    try expectEqual(queue.front(), 30);
+    try expectEqual(queue.front().?, 30);
     try expectEqual(queue.size, 2);
-    try expectEqual(queue.front(), 40);
+    try expectEqual(queue.front().?, 40);
     try expectEqual(queue.size, 1);
-    try expectEqual(queue.front(), 50);
+    try expectEqual(queue.front().?, 50);
     try expectEqual(queue.size, 0);
+
+    // ensure front returns null when no items in the queue
+    try expectEqual(queue.front(), null);
 }
 
-pub const PointU16 = Point(u16);
+pub const ScreenPoint = Point(u16);
+pub const MapPoint = Point(u16);
 
 fn Point(comptime T: type) type {
     return struct {
+        const Self = @This();
+
         x: T,
         y: T,
+
+        pub fn sub(self: Self, pt2: Self) Self {
+            return Self{
+                .x = self.x - pt2.x,
+                .y = self.y - pt2.y,
+            };
+        }
+
+        pub fn add(self: Self, pt2: Self) Self {
+            return Self{
+                .x = self.x + pt2.x,
+                .y = self.y + pt2.y,
+            };
+        }
     };
+}
+
+pub fn screenToMap(tileSize: u8, sPt: ScreenPoint) MapPoint {
+    return MapPoint{ .x = sPt.x / tileSize, .y = sPt.y / tileSize };
 }

@@ -3,12 +3,14 @@ const rl = @import("raylib");
 const state = @import("./state.zig");
 const sim = @import("./sim.zig");
 const ui = @import("./ui.zig");
+const cmd = @import("./cmd.zig");
 
 const Allocator = std.mem.Allocator;
 const Instant = std.time.Instant;
 
 const GameState = state.GameState;
 const UISystem = ui.UISystem;
+const CmdSystem = cmd.CmdSystem;
 
 pub fn main() !void {
     // Initialization
@@ -23,6 +25,7 @@ pub fn main() !void {
 
     var cells = sim.CellularAutomata(GameState).init(&game);
     var uisys = UISystem(GameState).init(&game);
+    var cmdsys = CmdSystem.init(&game);
 
     while (!rl.windowShouldClose()) { // Detect window close button
         // Input
@@ -37,6 +40,7 @@ pub fn main() !void {
 
         try cells.simulate(elapsed);
         uisys.update(elapsed);
+        cmdsys.update();
         //----------------------------------------------------------------------------------
 
         // Draw

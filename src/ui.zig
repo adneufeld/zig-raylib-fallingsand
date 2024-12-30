@@ -38,10 +38,15 @@ pub fn UISystem(comptime S: type) type {
 
         pub fn input(self: *Self) void {
             if (self.cursorType != CellType.none and rl.isMouseButtonReleased(rl.MouseButton.mouse_button_left)) {
+                const mousePt = ds.ScreenPoint{
+                    .x = @intCast(rl.getMouseX()),
+                    .y = @intCast(rl.getMouseY()),
+                };
+                const mapPt = ds.screenToMap(self.state.tileSize, mousePt);
                 self.state.cmd.queue.push(cmd.Cmd{ .addCells = cmd.AddCellsCmd{
                     .type = self.cursorType,
-                    .pt = ds.PointU16{ .x = 20, .y = 20 },
-                    .radius = self.cursorRadius,
+                    .pt = mapPt,
+                    .radius = @intFromFloat(self.cursorRadius),
                 } });
             }
 
