@@ -24,7 +24,7 @@ pub const CellType = enum(u8) {
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
-            else => 10 * std.time.ns_per_ms,
+            else => 50 * std.time.ns_per_ms,
         };
     }
 
@@ -42,6 +42,7 @@ pub fn CellularAutomata(comptime S: type) type {
         const Self = @This();
 
         state: *S,
+        leftToRight: bool = false,
 
         pub fn init(state: *S) Self {
             return Self{
@@ -112,13 +113,14 @@ pub fn CellularAutomata(comptime S: type) type {
         fn swapCell(self: *Self, x1: usize, y1: usize, x2: usize, y2: usize) void {
             if (!self.insideMap(x1, y1) or self.state.map[y1][x1].type == CellType.none) return;
             if (!self.insideMap(x2, y2) or self.state.map[y2][x2].type == CellType.none) return;
+            if (self.state.map[y2][x2].dirty) return;
 
             const topCell = self.state.map[y1][x1];
             self.state.map[y1][x1] = self.state.map[y2][x2];
             self.state.map[y2][x2] = topCell;
 
             self.state.map[y1][x1].dirty = true;
-            self.state.map[y2][x1].dirty = true;
+            self.state.map[y2][x2].dirty = true;
         }
 
         // move a non-none cell into an empty (none) cell
@@ -130,7 +132,7 @@ pub fn CellularAutomata(comptime S: type) type {
             self.state.map[y2][x2] = self.state.map[y1][x1];
             self.state.map[y2][x2].dirty = true;
             self.state.map[y1][x1].type = CellType.none;
-            self.state.map[y1][x1].dirty = false;
+            self.state.map[y1][x1].dirty = true;
         }
 
         fn sand(self: *Self, x: usize, y: usize) void {

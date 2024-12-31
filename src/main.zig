@@ -30,7 +30,7 @@ pub fn main() !void {
     while (!rl.windowShouldClose()) { // Detect window close button
         // Input
         // ---------------------------------------------------------------------------------
-        uisys.input();
+        try uisys.input();
         // ---------------------------------------------------------------------------------
 
         // Update
@@ -39,7 +39,7 @@ pub fn main() !void {
         const elapsed = (try Instant.now()).since(game.startTime);
 
         try cells.simulate(elapsed);
-        uisys.update(elapsed);
+        try uisys.update(elapsed);
         cmdsys.update();
         //----------------------------------------------------------------------------------
 

@@ -30,6 +30,9 @@ pub const GameState = struct {
 
     startTime: Instant,
     lastTick: CellTime = undefined,
+
+    // TODO - We lose some accuracy because any remainder of each tick is disregarded when the
+    // tick is slightly later than the exact time for the next simulation
     // tickRemainder: CellTime = undefined,
 
     ui: UIState = UIState{},
@@ -37,7 +40,7 @@ pub const GameState = struct {
 
     // TODO - add time control for speed & pause
 
-    // TODO - add undo
+    // TODO - add undo while paused
 
     pub fn init() !Self {
         const startTime = try Instant.now();
