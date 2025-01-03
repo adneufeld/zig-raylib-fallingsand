@@ -66,19 +66,21 @@ pub const CellularAutomata = struct {
             for (0..self.state.mapWidth) |wInd| {
                 const cell = self.state.map[hInd][wInd];
 
-                // simulate density
-                if (self.insideMap(wInd, hInd + 1) and
-                    cell.type.density() > self.state.map[hInd + 1][wInd].type.density())
-                {
-                    self.swapCell(wInd, hInd, wInd, hInd + 1);
-                }
+                if (!simThisTick.get(cell.type) or cell.dirty) continue;
 
                 // simulate cell types
-                if (!simThisTick.get(cell.type) or cell.dirty) continue;
                 switch (cell.type) {
                     CellType.sand => self.sand(wInd, hInd),
                     CellType.water => self.water(wInd, hInd),
-                    else => continue,
+                    CellType.none => continue,
+                }
+
+                // simulate density
+                if (self.insideMap(wInd, hInd + 1) and
+                    cell.type.density() > self.state.map[hInd + 1][wInd].type.density() and
+                    !self.state.map[hInd + 1][wInd].dirty)
+                {
+                    self.swapCell(wInd, hInd, wInd, hInd + 1);
                 }
             }
         }
