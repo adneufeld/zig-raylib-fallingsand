@@ -11,11 +11,13 @@ const Instant = std.time.Instant;
 const GameState = state.GameState;
 const UISystem = ui.UISystem;
 const CmdSystem = cmd.CmdSystem;
+const CellularAutomata = sim.CellularAutomata;
 
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    var game = try GameState.init();
+    const startTime = try Instant.now();
+    var game = GameState.init(startTime);
     rl.initWindow(game.screenWidth, game.screenHeight, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
@@ -23,8 +25,8 @@ pub fn main() !void {
     rl.setExitKey(rl.KeyboardKey.key_null); // disable close on ESC
     //--------------------------------------------------------------------------------------
 
-    var cells = sim.CellularAutomata(GameState).init(&game);
-    var uisys = UISystem(GameState).init(&game);
+    var cells = CellularAutomata.init(&game);
+    var uisys = UISystem.init(&game);
     var cmdsys = CmdSystem.init(&game);
 
     while (!rl.windowShouldClose()) { // Detect window close button
@@ -41,10 +43,19 @@ pub fn main() !void {
         try cells.simulate(elapsed);
         try uisys.update(elapsed);
         cmdsys.update();
+
+        // TODO - create a little performance tracking util which can be named and keep track of a rolling average
+
+        // how long does update take? Last check ~0.16-0.33ms
+        // const updateTime = (try Instant.now()).since(game.startTime);
+        // const ms: f64 = (@as(f64, @floatFromInt(updateTime)) - @as(f64, @floatFromInt(elapsed))) / std.time.ns_per_ms;
+        // std.log.debug("{d:.2}ms", .{ms});
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
+        const drawStartTime = try Instant.now();
+
         rl.beginDrawing();
         defer rl.endDrawing();
 
@@ -69,6 +80,10 @@ pub fn main() !void {
         // DRAW UI
         uisys.draw();
 
+        // how long does draw take? Last check 1.3-3ms avg (9ms rarely)
+        const drawEndTime = try Instant.now();
+        const ms: f64 = @as(f64, @floatFromInt(drawEndTime.since(drawStartTime))) / std.time.ns_per_ms;
+        std.log.debug("{d:.2}ms", .{ms});
         //----------------------------------------------------------------------------------
     }
 }

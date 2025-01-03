@@ -17,8 +17,6 @@ const SCREEN_HEIGHT = 456;
 const TILE_SIZE = 8;
 
 pub const GameState = struct {
-    const Self = @This();
-
     screenWidth: u16 = SCREEN_WIDTH,
     screenHeight: u16 = SCREEN_HEIGHT,
 
@@ -42,36 +40,9 @@ pub const GameState = struct {
 
     // TODO - add undo while paused
 
-    pub fn init() !Self {
-        const startTime = try Instant.now();
-        var new = Self{
+    pub fn init(startTime: Instant) GameState {
+        return GameState{
             .startTime = startTime,
         };
-
-        {
-            // little sand column to show our simulation works
-            const width = 4;
-            const wStart = new.mapHeight / 2 - width / 2;
-            const wEnd = wStart + width;
-            for (10..35) |hInd| {
-                for (wStart..wEnd) |wInd| {
-                    new.map[hInd][wInd].type = CellType.sand;
-                }
-            }
-        }
-
-        {
-            // little water to drop on the sand
-            const width = 30;
-            const wStart = new.mapHeight / 2 - width / 2;
-            const wEnd = wStart + width;
-            for (0..4) |hInd| {
-                for (wStart..wEnd) |wInd| {
-                    new.map[hInd][wInd].type = CellType.water;
-                }
-            }
-        }
-
-        return new;
     }
 };
