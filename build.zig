@@ -28,4 +28,21 @@ pub fn build(b: *std.Build) void {
     // RAYLIB END
 
     b.installArtifact(exe);
+
+    // This is where the interesting part begins.
+    // As you can see we are re-defining the same executable but
+    // we're binding it to a dedicated build step.
+    const exe_check = b.addExecutable(.{
+        .name = "foo",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    exe_check.linkLibrary(raylib_artifact);
+    exe_check.root_module.addImport("raylib", raylib);
+    exe_check.root_module.addImport("raygui", raygui);
+
+    const check = b.step("check", "Check if foo compiles");
+    check.dependOn(&exe_check.step);
 }
