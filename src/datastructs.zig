@@ -103,3 +103,40 @@ fn Point(comptime T: type) type {
 pub fn screenToMap(tileSize: u8, sPt: ScreenPoint) MapPoint {
     return MapPoint{ .x = sPt.x / tileSize, .y = sPt.y / tileSize };
 }
+
+pub fn RingBuffer(comptime T: type, capacity: usize) type {
+    return struct {
+        const Self = @This();
+
+        capacity: usize = capacity,
+        items: [capacity]T = undefined,
+        count: usize = 0, // total items put in
+        nextIdx: usize = 0, // the location for the next item, also the oldest item when count == capacity
+
+        pub fn put(self: *Self, item: T) void {
+            self.items[self.nextIdx] = item;
+            self.nextIdx = (self.nextIdx + 1) % self.capacity;
+            if (self.count < self.capacity) self.count += 1;
+        }
+    };
+}
+
+test "RingBuffer" {
+    var rb = RingBuffer(i32, 5){};
+
+    rb.put(1);
+    rb.put(2);
+    rb.put(3);
+    try expectEqual(rb.count, 3);
+
+    rb.put(4);
+    rb.put(5);
+
+    rb.put(6);
+    try expectEqual(rb.items[0], 6);
+    try expectEqual(rb.count, rb.capacity);
+
+    rb.put(7);
+    try expectEqual(rb.items[1], 7);
+    try expectEqual(rb.count, rb.capacity);
+}

@@ -4,6 +4,7 @@ const state = @import("./state.zig");
 const sim = @import("./sim.zig");
 const ui = @import("./ui.zig");
 const cmd = @import("./cmd.zig");
+const perf = @import("./perf.zig");
 
 const Allocator = std.mem.Allocator;
 const Instant = std.time.Instant;
@@ -29,6 +30,9 @@ pub fn main() !void {
     var uisys = UISystem.init(&game);
     var cmdsys = CmdSystem.init(&game);
 
+    var updatePerfTimer = try perf.RollingStepTimer.init("update");
+    var drawPerfTimer = try perf.RollingStepTimer.init("draw");
+
     while (!rl.windowShouldClose()) { // Detect window close button
         // Input
         // ---------------------------------------------------------------------------------
@@ -37,24 +41,19 @@ pub fn main() !void {
 
         // Update
         //----------------------------------------------------------------------------------
-        // const dt = rl.getFrameTime();
-        const elapsed = (try Instant.now()).since(game.startTime);
+        updatePerfTimer.reset();
 
+        const elapsed = (try Instant.now()).since(game.startTime);
         try cells.simulate(elapsed);
         try uisys.update(elapsed);
         cmdsys.update();
 
-        // TODO - create a little performance tracking util which can be named and keep track of a rolling average
-
-        // how long does update take? Last check ~0.16-0.33ms
-        // const updateTime = (try Instant.now()).since(game.startTime);
-        // const ms: f64 = (@as(f64, @floatFromInt(updateTime)) - @as(f64, @floatFromInt(elapsed))) / std.time.ns_per_ms;
-        // std.log.debug("{d:.2}ms", .{ms});
+        updatePerfTimer.step();
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
-        const drawStartTime = try Instant.now();
+        drawPerfTimer.reset();
 
         rl.beginDrawing();
         defer rl.endDrawing();
@@ -80,10 +79,9 @@ pub fn main() !void {
         // DRAW UI
         uisys.draw();
 
-        // how long does draw take? Last check 1.3-3ms avg (9ms rarely)
-        const drawEndTime = try Instant.now();
-        const ms: f64 = @as(f64, @floatFromInt(drawEndTime.since(drawStartTime))) / std.time.ns_per_ms;
-        std.log.debug("{d:.2}ms", .{ms});
+        drawPerfTimer.step();
         //----------------------------------------------------------------------------------
+
+        std.debug.print("{}, {}\n", .{ &updatePerfTimer, &drawPerfTimer });
     }
 }
