@@ -104,7 +104,7 @@ pub const CellularAutomata = struct {
         return simThisTick;
     }
 
-    fn insideMap(self: *CellularAutomata, x: usize, y: usize) bool {
+    pub fn insideMap(self: *CellularAutomata, x: usize, y: usize) bool {
         return x >= 0 and x <= self.state.mapWidth - 1 and
             y >= 0 and y <= self.state.mapHeight - 1;
     }
