@@ -58,12 +58,10 @@ pub const CellularAutomata = struct {
         while (h >= 0) : (h -= 1) {
             const hInd: usize = @intCast(h);
 
-            // PROBLEM: anything moving towards the right has the "left" cell simulated moving rightwards
-            // then the right cell is simulated and the first target is leftward so it moves right back. Also
-            // because the update order is left to right only the right-most cell in a line of potentially
-            // right-moving cells ever updates.
-
-            for (0..self.state.mapWidth) |wInd| {
+            const ltr = (hInd % 2) == 0;
+            for (0..self.state.mapWidth) |w| {
+                // alternate left-to-right and right-to-left to partially resolve the left-bias
+                const wInd = if (ltr) w else self.state.mapWidth - 1 - w;
                 const cell = self.state.map[hInd][wInd];
 
                 if (!simThisTick.get(cell.type) or cell.dirty) continue;
@@ -187,8 +185,5 @@ pub const CellularAutomata = struct {
 
             return;
         }
-
-        // TODO - Consider for left and right using a 3x3 neighbourhood... Perhaps this would be enough
-        // info to prevent sliding back and forth constantly.
     }
 };
