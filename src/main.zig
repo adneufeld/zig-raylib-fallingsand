@@ -24,6 +24,16 @@ pub fn main() !void {
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     rl.setExitKey(rl.KeyboardKey.key_null); // disable close on ESC
+
+    // Render vars
+    const camera = rl.Rectangle.init(0, 0, @floatFromInt(game.mapWidth), @floatFromInt(game.mapHeight));
+    const screen = rl.Rectangle.init(0, 0, @floatFromInt(game.screenWidth), @floatFromInt(game.screenHeight));
+    const origin = rl.Vector2.init(0, 0);
+    var screenImage = rl.genImageColor(state.MAP_WIDTH, state.MAP_HEIGHT, rl.Color.black);
+    rl.imageFormat(&screenImage, .pixelformat_uncompressed_r8g8b8a8);
+    const screenTexture = rl.loadTextureFromImage(screenImage);
+    var screenTextureBytes: [state.MAP_HEIGHT * state.MAP_WIDTH * 4]u8 = .{ 0, 0, 0, 255 } ** (state.MAP_HEIGHT * state.MAP_WIDTH);
+
     //--------------------------------------------------------------------------------------
 
     var cells = CellularAutomata.init(&game);
@@ -61,43 +71,28 @@ pub fn main() !void {
         rl.clearBackground(rl.Color.black);
 
         // DRAW CELLS
+
         for (0..game.mapHeight) |hInd| {
             for (0..game.mapWidth) |wInd| {
-                const x: i32 = @as(i32, @intCast(wInd));
-                const y: i32 = @as(i32, @intCast(hInd));
                 const cell = game.map[hInd][wInd];
-                var color = cell.type.color();
+                const color = cell.type.color();
 
-                if (cell.type == sim.CellType.none) {
-                    var numWaterNeighbour: u32 = 0;
-                    for (neighbourOffsets) |nOffset| {
-                        const nx = x + nOffset.x;
-                        const ny = y + nOffset.y;
-                        if (nx < 0 or ny < 0 or !cells.insideMap(@intCast(nx), @intCast(ny))) continue;
-                        if (game.map[@intCast(ny)][@intCast(nx)].type == sim.CellType.water) {
-                            numWaterNeighbour += 1;
-                        }
-                    }
-
-                    if (numWaterNeighbour >= 4) {
-                        color = rl.Color.init(80, 151, 243, 255);
-                    }
-                }
-
-                rl.drawRectangle(
-                    x * game.tileSize,
-                    y * game.tileSize,
-                    game.tileSize,
-                    game.tileSize,
-                    color,
-                );
+                const index: usize = (hInd * game.mapWidth + wInd) * 4;
+                screenTextureBytes[index + 0] = color.r;
+                screenTextureBytes[index + 1] = color.g;
+                screenTextureBytes[index + 2] = color.b;
+                screenTextureBytes[index + 3] = 255;
 
                 game.map[hInd][wInd].dirty = false;
             }
         }
 
+        rl.updateTexture(screenTexture, &screenTextureBytes);
+        rl.drawTexturePro(screenTexture, camera, screen, origin, 0.0, rl.Color.white);
+
         // DRAW UI
         uisys.draw();
+        // temp();
 
         drawPerfTimer.step();
         //----------------------------------------------------------------------------------

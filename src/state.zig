@@ -12,16 +12,18 @@ const CellTime = std.EnumArray(CellType, u64);
 const UIState = ui.UIState;
 const CmdState = cmd.CmdState;
 
-const SCREEN_WIDTH = 800;
-const SCREEN_HEIGHT = 456;
-const TILE_SIZE = 8;
+pub const SCREEN_WIDTH = 800;
+pub const SCREEN_HEIGHT = 456;
+pub const TILE_SIZE = 2;
+pub const MAP_WIDTH = SCREEN_WIDTH / TILE_SIZE;
+pub const MAP_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
 
 pub const GameState = struct {
     screenWidth: u16 = SCREEN_WIDTH,
     screenHeight: u16 = SCREEN_HEIGHT,
 
-    mapWidth: u16 = SCREEN_WIDTH / TILE_SIZE,
-    mapHeight: u16 = SCREEN_HEIGHT / TILE_SIZE,
+    mapWidth: u16 = MAP_WIDTH,
+    mapHeight: u16 = MAP_HEIGHT,
     map: [SCREEN_HEIGHT / TILE_SIZE][SCREEN_WIDTH / TILE_SIZE]Cell = undefined,
 
     tileSize: u8 = TILE_SIZE,

@@ -27,7 +27,7 @@ pub const CellType = enum(u8) {
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
-            else => 50 * std.time.ns_per_ms,
+            else => 5 * std.time.ns_per_ms,
         };
     }
 
@@ -91,7 +91,7 @@ pub const CellularAutomata = struct {
         while (it.next()) |entry| {
             const cell = entry.key;
             const cellLastTick = self.state.lastTick.get(cell);
-            const cellFreq = cell.freq();
+            const cellFreq = cell.freq(); // TODO consider scaling the freq/speed based on the tile size
             // const tickRemainder = state.tickRemainder.get(Cell.sand);
 
             if (elapsed > cellLastTick + cellFreq) {
