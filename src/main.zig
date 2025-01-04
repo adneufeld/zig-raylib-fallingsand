@@ -100,14 +100,3 @@ pub fn main() !void {
         std.debug.print("{}, {}\n", .{ &updatePerfTimer, &drawPerfTimer });
     }
 }
-
-const neighbourOffsets = [8]struct { x: i32, y: i32 }{
-    .{ .x = -1, .y = -1 }, // topleft, then clockwise
-    .{ .x = 0, .y = -1 },
-    .{ .x = 1, .y = -1 },
-    .{ .x = 1, .y = 0 },
-    .{ .x = 1, .y = 1 },
-    .{ .x = 0, .y = 1 },
-    .{ .x = -1, .y = 1 },
-    .{ .x = -1, .y = 0 },
-};
