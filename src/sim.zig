@@ -66,19 +66,18 @@ pub const CellularAutomata = struct {
 
                 if (!simThisTick.get(cell.type) or cell.dirty) continue;
 
+                // simulate density
+                if (self.insideMap(wInd, hInd + 1) and
+                    cell.type.density() > self.state.map[hInd + 1][wInd].type.density())
+                {
+                    self.swapCell(wInd, hInd, wInd, hInd + 1);
+                }
+
                 // simulate cell types
                 switch (cell.type) {
                     CellType.sand => self.sand(wInd, hInd),
                     CellType.water => self.water(wInd, hInd),
                     CellType.none => continue,
-                }
-
-                // simulate density
-                if (self.insideMap(wInd, hInd + 1) and
-                    cell.type.density() > self.state.map[hInd + 1][wInd].type.density() and
-                    !self.state.map[hInd + 1][wInd].dirty)
-                {
-                    self.swapCell(wInd, hInd, wInd, hInd + 1);
                 }
             }
         }
@@ -113,7 +112,6 @@ pub const CellularAutomata = struct {
     fn swapCell(self: *CellularAutomata, x1: usize, y1: usize, x2: usize, y2: usize) void {
         if (!self.insideMap(x1, y1) or self.state.map[y1][x1].type == CellType.none) return;
         if (!self.insideMap(x2, y2) or self.state.map[y2][x2].type == CellType.none) return;
-        if (self.state.map[y2][x2].dirty) return;
 
         const topCell = self.state.map[y1][x1];
         self.state.map[y1][x1] = self.state.map[y2][x2];
