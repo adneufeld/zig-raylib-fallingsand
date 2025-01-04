@@ -169,6 +169,14 @@ pub const CellularAutomata = struct {
             .{ .x = x + 1, .y = y }, // right
         };
 
+        // TODO there is still a problem where water doesn't move rightwards correctly because of the left target
+        // occurring first in the targets list. The first update tick moves the cell rightward, then the next
+        // update tick moves them back leftward. We may need to store a small "direction" value on the cell struct
+        // and attempt to maintain the current direction when both left & right are available.
+        //
+        // This further reinforces how we move cells left and right awkwardly with gaps in between due to the
+        // order of updates and the dirty flag. Perhaps this could be improved with a double buffer system...
+
         for (targets) |t| {
             if (!self.insideMap(t.x, t.y)) continue;
 
