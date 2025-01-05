@@ -91,7 +91,7 @@ pub const CellularAutomata = struct {
         while (it.next()) |entry| {
             const cell = entry.key;
             const cellLastTick = self.state.lastTick.get(cell);
-            const cellFreq = cell.freq() * state.TILE_SIZE; // TODO consider scaling the freq/speed based on the tile size
+            const cellFreq = cell.freq() * state.TILE_SIZE;
             // const tickRemainder = state.tickRemainder.get(Cell.sand);
 
             if (elapsed > cellLastTick + cellFreq) {
