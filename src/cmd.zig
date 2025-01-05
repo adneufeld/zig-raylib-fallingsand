@@ -2,7 +2,7 @@ const std = @import("std");
 const ds = @import("./datastructs.zig");
 const state = @import("./state.zig");
 const sim = @import("./sim.zig");
-const math = std.math;
+const math = @import("./math.zig");
 
 const CmdQueue = ds.DropQueue(Cmd, 8);
 const GameState = state.GameState;
@@ -55,13 +55,13 @@ pub const AddCellsCmd = struct {
         const bottomRight = topLeft.add(PointU16{ .x = 2 * tileRadius + 1, .y = 2 * tileRadius + 1 });
         for (topLeft.y..bottomRight.y) |y| {
             for (topLeft.x..bottomRight.x) |x| {
-                if (pointInCircle(
+                if (math.pointInCircle(
                     @floatFromInt(self.pt.x),
                     @floatFromInt(self.pt.y),
                     @floatFromInt(tileRadius),
                     @floatFromInt(x),
                     @floatFromInt(y),
-                ) and s.insideMap(x, y) and s.map[y][x].type == CellType.none) {
+                ) and s.insideMap(x, y)) {
                     s.map[y][x].type = self.type;
                     s.map[y][x].dirty = true;
                 }
@@ -69,10 +69,3 @@ pub const AddCellsCmd = struct {
         }
     }
 };
-
-fn pointInCircle(xCenter: f32, yCenter: f32, radius: f32, x: f32, y: f32) bool {
-    const xDiff = x - xCenter;
-    const yDiff = y - yCenter;
-    const distance = @sqrt(xDiff * xDiff + yDiff * yDiff);
-    return distance <= radius;
-}
