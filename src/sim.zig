@@ -17,12 +17,14 @@ pub const CellType = enum(u8) {
     none = 0,
     sand,
     water,
+    rock,
 
     pub fn color(self: CellType) rl.Color {
         return switch (self) {
             CellType.none => rl.Color.black,
             CellType.sand => rl.Color.init(191, 164, 94, 255),
             CellType.water => rl.Color.init(80, 107, 243, 255),
+            CellType.rock => rl.Color.gray,
         };
     }
 
@@ -35,6 +37,7 @@ pub const CellType = enum(u8) {
     pub fn density(self: CellType) u8 {
         return switch (self) {
             CellType.none => 255,
+            CellType.rock => 255,
             CellType.water => 150,
             CellType.sand => 200,
         };
@@ -69,6 +72,8 @@ pub const CellularAutomata = struct {
 
                 // simulate density
                 if (self.state.insideMap(wInd, hInd + 1) and
+                    cell.type.density() != 255 and
+                    self.state.map[hInd + 1][wInd].type.density() != 255 and
                     cell.type.density() > self.state.map[hInd + 1][wInd].type.density())
                 {
                     self.swapCell(wInd, hInd, wInd, hInd + 1);
@@ -78,7 +83,7 @@ pub const CellularAutomata = struct {
                 switch (cell.type) {
                     CellType.sand => self.sand(wInd, hInd),
                     CellType.water => self.water(wInd, hInd),
-                    CellType.none => continue,
+                    CellType.none, CellType.rock => continue,
                 }
             }
         }

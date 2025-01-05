@@ -87,10 +87,15 @@ pub const UISystem = struct {
             self.drawCursor = true;
             self.cursorType = CellType.water;
         }
+
+        if (rl.isKeyPressed(rl.KeyboardKey.key_r)) {
+            self.drawCursor = true;
+            self.cursorType = CellType.rock;
+        }
     }
 
     pub fn draw(self: *UISystem) void {
-        const keyText = "[S]and  [W]ater [Esc]Clear";
+        const keyText = "[S]and  [W]ater [R]ock [Esc]Clear";
         const txtLen = rl.measureText(keyText, self.keyTextSize);
         const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
         const textY = self.state.screenHeight - self.keyTextSize;
