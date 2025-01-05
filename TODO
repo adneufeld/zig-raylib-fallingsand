@@ -2,4 +2,5 @@
 
 - [ ] Flammable trait, fire cell type, wood cell type
 - [ ] UI for selecting brush size
+- [ ] Cell type which floats on water but still has gravity
 - [ ] Smarter updates using a chunked dirty flag and only update the chunk when it changed in the last update

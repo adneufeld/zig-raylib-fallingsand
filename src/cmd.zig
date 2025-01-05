@@ -43,13 +43,11 @@ pub const CmdSystem = struct {
 };
 
 pub const AddCellsCmd = struct {
-    const Self = @This();
-
     radius: u16,
     pt: PointU16,
     type: CellType,
 
-    pub fn execute(self: Self, s: *GameState) void {
+    pub fn execute(self: AddCellsCmd, s: *GameState) void {
         const tileRadius: u16 = self.radius / s.tileSize;
         const topLeft = self.pt.sub(PointU16{ .x = tileRadius, .y = tileRadius });
         const bottomRight = topLeft.add(PointU16{ .x = 2 * tileRadius + 1, .y = 2 * tileRadius + 1 });

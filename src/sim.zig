@@ -20,6 +20,7 @@ pub const CellType = enum(u8) {
     water,
     water_spout,
     rock,
+    erase, // special type which is never added to the map
 
     pub fn color(self: CellType) rl.Color {
         return switch (self) {
@@ -29,12 +30,13 @@ pub const CellType = enum(u8) {
             .water => rl.Color.init(80, 107, 243, 255),
             .water_spout => rl.Color.init(7, 31, 146, 255),
             .rock => rl.Color.gray,
+            .erase => rl.Color.init(200, 200, 200, 255),
         };
     }
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
-            .water_spout => 25 * std.time.ns_per_ms,
+            .water_spout, .sand_spout => 25 * std.time.ns_per_ms,
             else => 5 * std.time.ns_per_ms,
         };
     }
@@ -42,8 +44,9 @@ pub const CellType = enum(u8) {
     pub fn density(self: CellType) u8 {
         return switch (self) {
             .none, .rock, .water_spout, .sand_spout => 255,
-            CellType.water => 150,
-            CellType.sand => 200,
+            .water => 150,
+            .sand => 200,
+            .erase => 0,
         };
     }
 };

@@ -102,10 +102,15 @@ pub const UISystem = struct {
             self.drawCursor = true;
             self.cursorType = CellType.rock;
         }
+
+        if (!ctrlPressed and rl.isKeyPressed(.key_e)) {
+            self.drawCursor = true;
+            self.cursorType = .erase;
+        }
     }
 
     pub fn draw(self: *UISystem) void {
-        const keyText = "[Ctrl+] Spout  [S]and  [W]ater  [R]ock  [Esc] Clear Cursor";
+        const keyText = "[Ctrl+] Spout  [S]and  [W]ater  [R]ock [E]rase [Esc] Clear Cursor";
         const txtLen = rl.measureText(keyText, self.keyTextSize);
         const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
         const textY = self.state.screenHeight - self.keyTextSize;
@@ -141,10 +146,12 @@ pub const UISystem = struct {
             .y = @intCast(rl.getMouseY()),
         };
         const mapPt = ds.screenToMap(self.state.tileSize, mousePt);
-        self.state.cmd.queue.push(cmd.Cmd{ .addCells = cmd.AddCellsCmd{
-            .type = self.cursorType,
-            .pt = mapPt,
-            .radius = @intFromFloat(self.cursorRadius),
-        } });
+        self.state.cmd.queue.push(cmd.Cmd{
+            .addCells = cmd.AddCellsCmd{
+                .type = if (self.cursorType == .erase) .none else self.cursorType, // special case for erase
+                .pt = mapPt,
+                .radius = @intFromFloat(self.cursorRadius),
+            },
+        });
     }
 };
