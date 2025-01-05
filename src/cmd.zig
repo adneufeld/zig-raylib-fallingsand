@@ -61,7 +61,7 @@ pub const AddCellsCmd = struct {
                     @floatFromInt(tileRadius),
                     @floatFromInt(x),
                     @floatFromInt(y),
-                ) and s.map[y][x].type == CellType.none) {
+                ) and s.insideMap(x, y) and s.map[y][x].type == CellType.none) {
                     s.map[y][x].type = self.type;
                     s.map[y][x].dirty = true;
                 }

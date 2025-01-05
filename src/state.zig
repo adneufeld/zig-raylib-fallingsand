@@ -47,4 +47,9 @@ pub const GameState = struct {
             .startTime = startTime,
         };
     }
+
+    pub fn insideMap(self: *GameState, x: usize, y: usize) bool {
+        return x >= 0 and x <= self.mapWidth - 1 and
+            y >= 0 and y <= self.mapHeight - 1;
+    }
 };

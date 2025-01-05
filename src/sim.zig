@@ -4,11 +4,12 @@ const state = @import("./state.zig");
 
 const Instant = std.time.Instant;
 const CellSimTick = std.EnumArray(CellType, bool);
+var prng = std.rand.DefaultPrng.init(0);
 
 const GameState = state.GameState;
 
 pub const Cell = struct {
-    type: CellType = CellType.none,
+    type: CellType = .none,
     dirty: bool = false,
 };
 
@@ -67,7 +68,7 @@ pub const CellularAutomata = struct {
                 if (!simThisTick.get(cell.type) or cell.dirty) continue;
 
                 // simulate density
-                if (self.insideMap(wInd, hInd + 1) and
+                if (self.state.insideMap(wInd, hInd + 1) and
                     cell.type.density() > self.state.map[hInd + 1][wInd].type.density())
                 {
                     self.swapCell(wInd, hInd, wInd, hInd + 1);
@@ -90,7 +91,7 @@ pub const CellularAutomata = struct {
         while (it.next()) |entry| {
             const cell = entry.key;
             const cellLastTick = self.state.lastTick.get(cell);
-            const cellFreq = cell.freq(); // TODO consider scaling the freq/speed based on the tile size
+            const cellFreq = cell.freq() * state.TILE_SIZE; // TODO consider scaling the freq/speed based on the tile size
             // const tickRemainder = state.tickRemainder.get(Cell.sand);
 
             if (elapsed > cellLastTick + cellFreq) {
@@ -103,15 +104,10 @@ pub const CellularAutomata = struct {
         return simThisTick;
     }
 
-    pub fn insideMap(self: *CellularAutomata, x: usize, y: usize) bool {
-        return x >= 0 and x <= self.state.mapWidth - 1 and
-            y >= 0 and y <= self.state.mapHeight - 1;
-    }
-
     // swap two cells with non-none types
     fn swapCell(self: *CellularAutomata, x1: usize, y1: usize, x2: usize, y2: usize) void {
-        if (!self.insideMap(x1, y1) or self.state.map[y1][x1].type == CellType.none) return;
-        if (!self.insideMap(x2, y2) or self.state.map[y2][x2].type == CellType.none) return;
+        if (!self.state.insideMap(x1, y1) or self.state.map[y1][x1].type == CellType.none) return;
+        if (!self.state.insideMap(x2, y2) or self.state.map[y2][x2].type == CellType.none) return;
 
         const topCell = self.state.map[y1][x1];
         self.state.map[y1][x1] = self.state.map[y2][x2];
@@ -133,6 +129,23 @@ pub const CellularAutomata = struct {
         self.state.map[y1][x1].dirty = true;
     }
 
+    fn checkTarget(self: *CellularAutomata, cellType: CellType, x: usize, y: usize, tx: usize, ty: usize) bool {
+        if (!self.state.insideMap(tx, ty)) return false;
+
+        const targetHasCell = self.state.map[ty][tx].type != CellType.none;
+        const targetIsLowerDensity = cellType.density() > self.state.map[ty][tx].type.density();
+
+        if (targetHasCell and !targetIsLowerDensity) return false;
+
+        if (targetHasCell and targetIsLowerDensity) {
+            self.swapCell(x, y, tx, ty);
+        } else {
+            self.moveCell(x, y, tx, ty);
+        }
+
+        return true;
+    }
+
     fn sand(self: *CellularAutomata, x: usize, y: usize) void {
         const targets = [3]struct { x: usize, y: usize }{
             .{ .x = x, .y = y + 1 }, // down
@@ -141,55 +154,41 @@ pub const CellularAutomata = struct {
         };
 
         for (targets) |t| {
-            if (!self.insideMap(t.x, t.y)) continue;
-
-            const targetHasCell = self.state.map[t.y][t.x].type != CellType.none;
-            const targetIsLowerDensity = CellType.sand.density() > self.state.map[t.y][t.x].type.density();
-
-            if (targetHasCell and !targetIsLowerDensity) continue;
-
-            if (targetHasCell and targetIsLowerDensity) {
-                self.swapCell(x, y, t.x, t.y);
-            } else {
-                self.moveCell(x, y, t.x, t.y);
-            }
-
-            return;
+            if (self.checkTarget(.sand, x, y, t.x, t.y)) return;
         }
     }
 
     fn water(self: *CellularAutomata, x: usize, y: usize) void {
-        const targets = [_]struct { x: usize, y: usize }{
+        var targets = [7]struct { x: usize, y: usize }{
             .{ .x = x, .y = y + 1 }, // down
             .{ .x = x -% 1, .y = y + 1 }, // down-left
             .{ .x = x + 1, .y = y + 1 }, // down-right
-            .{ .x = x -% 1, .y = y }, // left
-            .{ .x = x + 1, .y = y }, // right
+            undefined,
+            undefined,
+            undefined,
+            undefined,
         };
+        const leftTarget = .{ .x = x -% 1, .y = y };
+        const leftFarTarget = .{ .x = x -% 2, .y = y };
+        const rightTarget = .{ .x = x + 1, .y = y };
+        const rightFarTarget = .{ .x = x + 2, .y = y };
 
-        // TODO there is still a problem where water doesn't move rightwards correctly because of the left target
-        // occurring first in the targets list. The first update tick moves the cell rightward, then the next
-        // update tick moves them back leftward. We may need to store a small "direction" value on the cell struct
-        // and attempt to maintain the current direction when both left & right are available.
-        //
-        // This further reinforces how we move cells left and right awkwardly with gaps in between due to the
-        // order of updates and the dirty flag. Perhaps this could be improved with a double buffer system...
+        if (prng.random().float(f32) < 0.5) {
+            targets[3] = leftTarget;
+            targets[4] = leftFarTarget;
+            targets[5] = rightTarget;
+            targets[6] = rightFarTarget;
+        } else {
+            targets[3] = rightTarget;
+            targets[4] = rightFarTarget;
+            targets[5] = leftTarget;
+            targets[6] = leftFarTarget;
+        }
 
         for (targets) |t| {
-            if (!self.insideMap(t.x, t.y)) continue;
-
-            const targetHasCell = self.state.map[t.y][t.x].type != CellType.none;
-            const targetIsLowerDensity = CellType.water.density() > self.state.map[t.y][t.x].type.density();
-
-            if (targetHasCell and !targetIsLowerDensity) continue;
-
-            if (targetHasCell and targetIsLowerDensity) {
-                self.swapCell(x, y, t.x, t.y);
-            } else {
-                self.moveCell(x, y, t.x, t.y);
+            if (self.checkTarget(.water, x, y, t.x, t.y)) {
+                return;
             }
-
-            return;
         }
     }
 };
