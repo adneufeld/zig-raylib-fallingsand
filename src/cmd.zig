@@ -9,6 +9,8 @@ const GameState = state.GameState;
 const CellType = sim.CellType;
 const PointU16 = ds.MapPoint;
 
+var prng = std.rand.DefaultPrng.init(0);
+
 pub const CmdState = struct {
     queue: CmdQueue = CmdQueue.init(),
 };
@@ -46,14 +48,17 @@ pub const AddCellsCmd = struct {
     radius: u16,
     pt: PointU16,
     type: CellType,
+    density: f32 = 1.0, // 0 to 1
 
     pub fn execute(self: AddCellsCmd, s: *GameState) void {
         const tileRadius: u16 = self.radius / s.tileSize;
         const topLeft = self.pt.sub(PointU16{ .x = tileRadius, .y = tileRadius });
         const bottomRight = topLeft.add(PointU16{ .x = 2 * tileRadius + 1, .y = 2 * tileRadius + 1 });
+        var densityOffset: usize = 0;
         for (topLeft.y..bottomRight.y) |y| {
             for (topLeft.x..bottomRight.x) |x| {
-                if (math.pointInCircle(
+                if (prng.random().float(f32) <= self.density and
+                    math.pointInCircle(
                     @floatFromInt(self.pt.x),
                     @floatFromInt(self.pt.y),
                     @floatFromInt(tileRadius),
@@ -64,6 +69,7 @@ pub const AddCellsCmd = struct {
                     s.map[y][x].dirty = true;
                 }
             }
+            densityOffset += 1;
         }
     }
 };
