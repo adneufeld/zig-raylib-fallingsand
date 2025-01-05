@@ -36,7 +36,7 @@ pub const CellType = enum(u8) {
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
-            .water_spout, .sand_spout => 25 * std.time.ns_per_ms,
+            .water_spout, .sand_spout => 50 * std.time.ns_per_ms,
             else => 5 * std.time.ns_per_ms,
         };
     }

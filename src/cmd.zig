@@ -54,7 +54,6 @@ pub const AddCellsCmd = struct {
         const tileRadius: u16 = self.radius / s.tileSize;
         const topLeft = self.pt.sub(PointU16{ .x = tileRadius, .y = tileRadius });
         const bottomRight = topLeft.add(PointU16{ .x = 2 * tileRadius + 1, .y = 2 * tileRadius + 1 });
-        var densityOffset: usize = 0;
         for (topLeft.y..bottomRight.y) |y| {
             for (topLeft.x..bottomRight.x) |x| {
                 if (prng.random().float(f32) <= self.density and
@@ -69,7 +68,6 @@ pub const AddCellsCmd = struct {
                     s.map[y][x].dirty = true;
                 }
             }
-            densityOffset += 1;
         }
     }
 };
