@@ -16,17 +16,19 @@ pub const Cell = struct {
 pub const CellType = enum(u8) {
     none = 0,
     sand,
+    sand_spout,
     water,
-    rock,
     water_spout,
+    rock,
 
     pub fn color(self: CellType) rl.Color {
         return switch (self) {
-            CellType.none => rl.Color.black,
-            CellType.sand => rl.Color.init(191, 164, 94, 255),
-            CellType.water => rl.Color.init(80, 107, 243, 255),
-            CellType.water_spout => rl.Color.init(7, 31, 146, 255),
-            CellType.rock => rl.Color.gray,
+            .none => rl.Color.black,
+            .sand => rl.Color.init(191, 164, 94, 255),
+            .sand_spout => rl.Color.init(118, 102, 57, 255),
+            .water => rl.Color.init(80, 107, 243, 255),
+            .water_spout => rl.Color.init(7, 31, 146, 255),
+            .rock => rl.Color.gray,
         };
     }
 
@@ -39,9 +41,7 @@ pub const CellType = enum(u8) {
 
     pub fn density(self: CellType) u8 {
         return switch (self) {
-            CellType.none => 255,
-            CellType.rock => 255,
-            CellType.water_spout => 255,
+            .none, .rock, .water_spout, .sand_spout => 255,
             CellType.water => 150,
             CellType.sand => 200,
         };
@@ -86,7 +86,8 @@ pub const CellularAutomata = struct {
                 switch (cell.type) {
                     .sand => self.sand(wInd, hInd),
                     .water => self.water(wInd, hInd),
-                    .water_spout => self.waterSpout(wInd, hInd),
+                    .water_spout => self.spout(.water, wInd, hInd),
+                    .sand_spout => self.spout(.sand, wInd, hInd),
                     else => continue,
                 }
             }
@@ -201,13 +202,13 @@ pub const CellularAutomata = struct {
         }
     }
 
-    fn waterSpout(self: *CellularAutomata, x: usize, y: usize) void {
+    fn spout(self: *CellularAutomata, cellType: CellType, x: usize, y: usize) void {
         if (prng.random().float(f32) < 0.75) return;
 
         if (self.state.insideMap(x, y + 1) and
             self.state.map[y + 1][x].type == .none)
         {
-            self.state.map[y + 1][x].type = .water;
+            self.state.map[y + 1][x].type = cellType;
             self.state.map[y + 1][x].dirty = true;
         }
     }

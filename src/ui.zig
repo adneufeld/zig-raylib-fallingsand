@@ -84,6 +84,10 @@ pub const UISystem = struct {
             self.drawCursor = true;
             self.cursorType = CellType.sand;
         }
+        if (ctrlPressed and rl.isKeyPressed(.key_s)) {
+            self.drawCursor = true;
+            self.cursorType = CellType.sand_spout;
+        }
 
         if (!ctrlPressed and rl.isKeyPressed(.key_w)) {
             self.drawCursor = true;
