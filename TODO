@@ -1,0 +1,6 @@
+# TO DO 
+
+- [ ] Create a "emitter" that can be deployed on a new draw layer and emit cells of a given type
+- [ ] Flammable trait, fire cell type, wood cell type
+- [ ] UI for selecting brush size
+- [ ] Smarter updates using a chunked dirty flag and only update the chunk when it changed in the last update

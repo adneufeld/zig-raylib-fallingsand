@@ -97,6 +97,6 @@ pub fn main() !void {
         drawPerfTimer.step();
         //----------------------------------------------------------------------------------
 
-        std.debug.print("{}, {}\n", .{ &updatePerfTimer, &drawPerfTimer });
+        std.debug.print("{}, {} (={d:.2} of 16.67ms MAX)\n", .{ &updatePerfTimer, &drawPerfTimer, (updatePerfTimer.average() + drawPerfTimer.average()) / std.time.ns_per_ms });
     }
 }
