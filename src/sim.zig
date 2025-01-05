@@ -18,18 +18,21 @@ pub const CellType = enum(u8) {
     sand,
     water,
     rock,
+    water_spout,
 
     pub fn color(self: CellType) rl.Color {
         return switch (self) {
             CellType.none => rl.Color.black,
             CellType.sand => rl.Color.init(191, 164, 94, 255),
             CellType.water => rl.Color.init(80, 107, 243, 255),
+            CellType.water_spout => rl.Color.init(7, 31, 146, 255),
             CellType.rock => rl.Color.gray,
         };
     }
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
+            .water_spout => 25 * std.time.ns_per_ms,
             else => 5 * std.time.ns_per_ms,
         };
     }
@@ -38,6 +41,7 @@ pub const CellType = enum(u8) {
         return switch (self) {
             CellType.none => 255,
             CellType.rock => 255,
+            CellType.water_spout => 255,
             CellType.water => 150,
             CellType.sand => 200,
         };
@@ -46,7 +50,6 @@ pub const CellType = enum(u8) {
 
 pub const CellularAutomata = struct {
     state: *GameState,
-    leftToRight: bool = false,
 
     pub fn init(s: *GameState) CellularAutomata {
         return CellularAutomata{
@@ -81,9 +84,10 @@ pub const CellularAutomata = struct {
 
                 // simulate cell types
                 switch (cell.type) {
-                    CellType.sand => self.sand(wInd, hInd),
-                    CellType.water => self.water(wInd, hInd),
-                    CellType.none, CellType.rock => continue,
+                    .sand => self.sand(wInd, hInd),
+                    .water => self.water(wInd, hInd),
+                    .water_spout => self.waterSpout(wInd, hInd),
+                    else => continue,
                 }
             }
         }
@@ -194,6 +198,17 @@ pub const CellularAutomata = struct {
             if (self.checkTarget(.water, x, y, t.x, t.y)) {
                 return;
             }
+        }
+    }
+
+    fn waterSpout(self: *CellularAutomata, x: usize, y: usize) void {
+        if (prng.random().float(f32) < 0.75) return;
+
+        if (self.state.insideMap(x, y + 1) and
+            self.state.map[y + 1][x].type == .none)
+        {
+            self.state.map[y + 1][x].type = .water;
+            self.state.map[y + 1][x].dirty = true;
         }
     }
 };

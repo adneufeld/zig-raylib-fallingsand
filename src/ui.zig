@@ -78,24 +78,30 @@ pub const UISystem = struct {
             self.lastRepeat = null;
         }
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_s)) {
+        const ctrlPressed = rl.isKeyDown(.key_left_control) or rl.isKeyDown(.key_right_control);
+
+        if (!ctrlPressed and rl.isKeyPressed(.key_s)) {
             self.drawCursor = true;
             self.cursorType = CellType.sand;
         }
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_w)) {
+        if (!ctrlPressed and rl.isKeyPressed(.key_w)) {
             self.drawCursor = true;
             self.cursorType = CellType.water;
         }
+        if (ctrlPressed and rl.isKeyPressed(.key_w)) {
+            self.drawCursor = true;
+            self.cursorType = CellType.water_spout;
+        }
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_r)) {
+        if (!ctrlPressed and rl.isKeyPressed(.key_r)) {
             self.drawCursor = true;
             self.cursorType = CellType.rock;
         }
     }
 
     pub fn draw(self: *UISystem) void {
-        const keyText = "[S]and  [W]ater [R]ock [Esc]Clear";
+        const keyText = "[Ctrl+] Spout  [S]and  [W]ater  [R]ock  [Esc] Clear Cursor";
         const txtLen = rl.measureText(keyText, self.keyTextSize);
         const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
         const textY = self.state.screenHeight - self.keyTextSize;
