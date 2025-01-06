@@ -13,6 +13,7 @@ const GameState = state.GameState;
 const UISystem = ui.UISystem;
 const CmdSystem = cmd.CmdSystem;
 const CellularAutomata = sim.CellularAutomata;
+const CellType = sim.CellType;
 
 pub fn main() !void {
     // Initialization
@@ -71,11 +72,10 @@ pub fn main() !void {
         rl.clearBackground(rl.Color.black);
 
         // DRAW CELLS
-
         for (0..game.mapHeight) |hInd| {
             for (0..game.mapWidth) |wInd| {
                 const cell = game.map[hInd][wInd];
-                const color = cell.type.color();
+                const color = cell.color();
 
                 const index: usize = (hInd * game.mapWidth + wInd) * 4;
                 screenTextureBytes[index + 0] = color.r;
@@ -92,7 +92,6 @@ pub fn main() !void {
 
         // DRAW UI
         uisys.draw();
-        // temp();
 
         drawPerfTimer.step();
         //----------------------------------------------------------------------------------

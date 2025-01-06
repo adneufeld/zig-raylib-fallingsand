@@ -32,9 +32,10 @@ pub const UISystem = struct {
     keyRepeatValue: rl.KeyboardKey = .key_null,
     keyRepeatNs: u64 = 75 * time.ns_per_ms,
 
-    const infoTextSize = 16;
+    const infoTextSize = 14;
     const backgroundColor = rl.Color.init(0, 0, 0, 255 / 2);
     const addDensity = 0.25;
+    const fireDensity = 0.25;
     const solidDensity = 1.0;
 
     pub fn init(s: *GameState) UISystem {
@@ -138,6 +139,12 @@ pub const UISystem = struct {
             self.cursorDensity = solidDensity;
         }
 
+        if (!ctrlPressed and rl.isKeyPressed(.key_f)) {
+            self.drawCursor = true;
+            self.cursorType = .fire;
+            self.cursorDensity = fireDensity;
+        }
+
         if (rl.isKeyPressed(.key_minus)) {
             self.keyRepeat = try Instant.now();
             self.keyRepeatValue = .key_minus;
@@ -153,7 +160,7 @@ pub const UISystem = struct {
     }
 
     pub fn draw(self: *UISystem) void {
-        const keyText = "[Ctrl+] Emitter   [S]and   [W]ater   [R]ock   W[o]od   [E]rase   [+][-] Brush Size   [Esc] Clear Cursor";
+        const keyText = "[Ctrl+] Emitter   [S]and   [W]ater   [R]ock   W[o]od   [F]ire   [E]rase   [+][-] Brush Size   [Esc] Clear Cursor";
         const txtLen = rl.measureText(keyText, infoTextSize);
         const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
         const textY = self.state.screenHeight - infoTextSize;
@@ -177,7 +184,7 @@ pub const UISystem = struct {
         if (self.drawCursor and rl.isCursorOnScreen()) {
             const mx = rl.getMouseX();
             const my = rl.getMouseY();
-            var color = self.cursorType.color();
+            var color = self.cursorType.baseColor();
             color.a /= 2;
             rl.drawCircle(mx, my, self.cursorRadius, color);
         }

@@ -66,6 +66,7 @@ pub const AddCellsCmd = struct {
                 ) and s.insideMap(x, y)) {
                     s.map[y][x].type = self.type;
                     s.map[y][x].dirty = true;
+                    s.map[y][x].frame = self.type.numFrames();
                 }
             }
         }

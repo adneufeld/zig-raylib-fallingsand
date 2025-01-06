@@ -11,10 +11,18 @@ const GameState = state.GameState;
 pub const Cell = struct {
     type: CellType = .none,
     dirty: bool = false,
+    frame: u8 = 0, // animation frame counts down to 0
+
+    pub fn color(self: Cell) rl.Color {
+        return if (self.type != .fire)
+            self.type.baseColor()
+        else
+            self.type.frameColor(self.frame);
+    }
 };
 
 pub const CellType = enum(u8) {
-    none = 0,
+    none,
     sand,
     sand_spout,
     water,
@@ -22,8 +30,17 @@ pub const CellType = enum(u8) {
     rock,
     erase, // special type which is never added to the map
     wood,
+    fire,
 
-    pub fn color(self: CellType) rl.Color {
+    const fireColors = [_]rl.Color{
+        rl.Color.init(94, 24, 0, 255),
+        rl.Color.init(124, 38, 0, 255),
+        rl.Color.init(174, 44, 0, 255),
+        rl.Color.init(225, 68, 0, 255),
+        rl.Color.init(255, 77, 0, 255),
+    };
+
+    pub fn baseColor(self: CellType) rl.Color {
         return switch (self) {
             .none => rl.Color.black,
             .sand => rl.Color.init(191, 164, 94, 255),
@@ -33,13 +50,22 @@ pub const CellType = enum(u8) {
             .rock => rl.Color.gray,
             .erase => rl.Color.init(200, 200, 200, 255),
             .wood => rl.Color.init(72, 18, 12, 255),
+            .fire => rl.Color.init(255, 77, 0, 255),
         };
+    }
+
+    pub fn frameColor(self: CellType, frame: u8) rl.Color {
+        if (self != .fire) {
+            return self.baseColor();
+        }
+        return fireColors[frame];
     }
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
             .rock, .wood => 500 * std.time.ns_per_ms,
             .water_spout, .sand_spout => 50 * std.time.ns_per_ms,
+            .fire => 50 * std.time.ns_per_ms,
             else => 5 * std.time.ns_per_ms,
         };
     }
@@ -57,6 +83,13 @@ pub const CellType = enum(u8) {
         return switch (self) {
             .wood => true,
             else => false,
+        };
+    }
+
+    pub fn numFrames(self: CellType) u8 {
+        return switch (self) {
+            .fire => 4,
+            else => 0,
         };
     }
 };
@@ -99,6 +132,7 @@ pub const CellularAutomata = struct {
                 switch (cell.type) {
                     .sand => self.sand(wInd, hInd),
                     .water => self.water(wInd, hInd),
+                    .fire => self.fire(wInd, hInd),
                     .water_spout => self.spout(.water, wInd, hInd),
                     .sand_spout => self.spout(.sand, wInd, hInd),
                     else => continue,
@@ -213,6 +247,30 @@ pub const CellularAutomata = struct {
                 return;
             }
         }
+    }
+
+    fn fire(self: *CellularAutomata, x: usize, y: usize) void {
+        const cell = &self.state.map[y][x];
+
+        if (cell.frame == 0) {
+            cell.type = .none;
+            cell.dirty = false;
+            return;
+        }
+
+        cell.frame -= 1;
+
+        const potentialTargets = [_]struct { x: usize, y: usize }{
+            .{ .x = x, .y = y }, // same
+            .{ .x = x, .y = y + 1 }, // down
+            .{ .x = x, .y = y - 1 }, // up
+            .{ .x = x - 1, .y = y }, // left
+            .{ .x = x + 1, .y = y + 1 }, // right
+        };
+
+        const tInd = prng.random().uintLessThan(usize, potentialTargets.len);
+        const target = potentialTargets[tInd];
+        _ = self.checkTarget(cell.type, x, y, target.x, target.y);
     }
 
     fn spout(self: *CellularAutomata, cellType: CellType, x: usize, y: usize) void {
