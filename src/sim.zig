@@ -21,6 +21,7 @@ pub const CellType = enum(u8) {
     water_spout,
     rock,
     erase, // special type which is never added to the map
+    wood,
 
     pub fn color(self: CellType) rl.Color {
         return switch (self) {
@@ -31,11 +32,13 @@ pub const CellType = enum(u8) {
             .water_spout => rl.Color.init(7, 31, 146, 255),
             .rock => rl.Color.gray,
             .erase => rl.Color.init(200, 200, 200, 255),
+            .wood => rl.Color.init(72, 18, 12, 255),
         };
     }
 
     pub fn freq(self: CellType) u64 {
         return switch (self) {
+            .rock, .wood => 500 * std.time.ns_per_ms,
             .water_spout, .sand_spout => 50 * std.time.ns_per_ms,
             else => 5 * std.time.ns_per_ms,
         };
@@ -43,10 +46,17 @@ pub const CellType = enum(u8) {
 
     pub fn density(self: CellType) u8 {
         return switch (self) {
-            .none, .rock, .water_spout, .sand_spout => 255,
+            .erase => 0,
             .water => 150,
             .sand => 200,
-            .erase => 0,
+            else => 255,
+        };
+    }
+
+    pub fn flammable(self: CellType) bool {
+        return switch (self) {
+            .wood => true,
+            else => false,
         };
     }
 };

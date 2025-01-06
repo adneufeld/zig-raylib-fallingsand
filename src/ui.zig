@@ -132,6 +132,12 @@ pub const UISystem = struct {
             self.cursorDensity = solidDensity;
         }
 
+        if (!ctrlPressed and rl.isKeyPressed(.key_o)) {
+            self.drawCursor = true;
+            self.cursorType = .wood;
+            self.cursorDensity = solidDensity;
+        }
+
         if (rl.isKeyPressed(.key_minus)) {
             self.keyRepeat = try Instant.now();
             self.keyRepeatValue = .key_minus;
@@ -147,7 +153,7 @@ pub const UISystem = struct {
     }
 
     pub fn draw(self: *UISystem) void {
-        const keyText = "[Ctrl+] Emitter   [S]and   [W]ater   [R]ock   [E]rase   [+][-] Brush Size   [Esc] Clear Cursor";
+        const keyText = "[Ctrl+] Emitter   [S]and   [W]ater   [R]ock   W[o]od   [E]rase   [+][-] Brush Size   [Esc] Clear Cursor";
         const txtLen = rl.measureText(keyText, infoTextSize);
         const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
         const textY = self.state.screenHeight - infoTextSize;

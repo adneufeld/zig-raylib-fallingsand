@@ -1,5 +1,5 @@
 # TO DO 
 
 - [ ] Flammable trait, fire cell type, wood cell type
-- [ ] Cell type which floats on water but still has gravity
+- [ ] Cell type which floats on water but still has gravity, maybe "driftwood"
 - [ ] Smarter updates using a chunked dirty flag and only update the chunk when it changed in the last update
