@@ -85,13 +85,3 @@ pub const RollingStepTimer = struct {
         try writer.print("{s}: {d:.2}ms", .{ r.name, avgMs });
     }
 };
-
-// test "RollingStepTimer" {
-//     var t = try RollingStepTimer.init("test 1");
-//     for (0..1000) |_| {
-//         t.reset();
-//         std.time.sleep(1 * time.ns_per_ms);
-//         t.step();
-//     }
-//     std.debug.print("asdf{}", .{&t});
-// }

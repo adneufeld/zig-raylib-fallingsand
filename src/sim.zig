@@ -206,7 +206,7 @@ pub const CellularAutomata = struct {
     }
 
     fn sand(self: *CellularAutomata, x: usize, y: usize) void {
-        const targets = [3]struct { x: usize, y: usize }{
+        const targets = [_]struct { x: usize, y: usize }{
             .{ .x = x, .y = y + 1 }, // down
             .{ .x = x -% 1, .y = y + 1 }, // down-left
             .{ .x = x + 1, .y = y + 1 }, // down-right
@@ -218,7 +218,7 @@ pub const CellularAutomata = struct {
     }
 
     fn water(self: *CellularAutomata, x: usize, y: usize) void {
-        var targets = [7]struct { x: usize, y: usize }{
+        var targets = [_]struct { x: usize, y: usize }{
             .{ .x = x, .y = y + 1 }, // down
             .{ .x = x -% 1, .y = y + 1 }, // down-left
             .{ .x = x + 1, .y = y + 1 }, // down-right
@@ -272,7 +272,29 @@ pub const CellularAutomata = struct {
 
         const tInd = prng.random().uintLessThan(usize, potentialTargets.len);
         const target = potentialTargets[tInd];
-        _ = self.checkTarget(cell.type, x, y, target.x, target.y);
+        const moved = self.checkTarget(cell.type, x, y, target.x, target.y);
+
+        const shouldSpread = prng.random().float(f32) < 0.25;
+        if (!shouldSpread) return;
+
+        const fromX = if (moved) target.x else x;
+        const fromY = if (moved) target.y else y;
+        const neighbours = [_]struct { x: usize, y: usize }{
+            .{ .x = fromX, .y = fromY -% 1 }, // up
+            .{ .x = fromX + 1, .y = fromY -% 1 }, // up-right
+            .{ .x = fromX + 1, .y = fromY }, // right
+            .{ .x = fromX + 1, .y = fromY + 1 }, // down-right
+            .{ .x = fromX, .y = fromY + 1 }, // down
+            .{ .x = fromX -% 1, .y = fromY + 1 }, // down-left
+            .{ .x = fromX -% 1, .y = fromY }, // left
+        };
+        for (neighbours) |n| {
+            if (self.state.insideMap(n.x, n.y) and self.state.map[n.y][n.x].type.flammable()) {
+                self.state.map[n.y][n.x].type = .fire;
+                self.state.map[n.y][n.x].dirty = true;
+                self.state.map[n.y][n.x].frame = CellType.fire.numFrames();
+            }
+        }
     }
 
     fn spout(self: *CellularAutomata, cellType: CellType, x: usize, y: usize) void {
