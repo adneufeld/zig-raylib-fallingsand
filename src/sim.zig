@@ -37,6 +37,8 @@ pub const CellType = enum(u8) {
         rl.Color.init(124, 38, 0, 255),
         rl.Color.init(174, 44, 0, 255),
         rl.Color.init(225, 68, 0, 255),
+        rl.Color.init(225, 68, 0, 255),
+        rl.Color.init(255, 77, 0, 255),
         rl.Color.init(255, 77, 0, 255),
     };
 
@@ -88,7 +90,7 @@ pub const CellType = enum(u8) {
 
     pub fn numFrames(self: CellType) u8 {
         return switch (self) {
-            .fire => 4,
+            .fire => fireColors.len - 1,
             else => 0,
         };
     }
@@ -263,8 +265,8 @@ pub const CellularAutomata = struct {
         const potentialTargets = [_]struct { x: usize, y: usize }{
             .{ .x = x, .y = y }, // same
             .{ .x = x, .y = y + 1 }, // down
-            .{ .x = x, .y = y - 1 }, // up
-            .{ .x = x - 1, .y = y }, // left
+            .{ .x = x, .y = y -% 1 }, // up
+            .{ .x = x -% 1, .y = y }, // left
             .{ .x = x + 1, .y = y + 1 }, // right
         };
 

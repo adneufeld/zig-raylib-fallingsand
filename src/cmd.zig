@@ -7,7 +7,7 @@ const math = @import("./math.zig");
 const CmdQueue = ds.DropQueue(Cmd, 8);
 const GameState = state.GameState;
 const CellType = sim.CellType;
-const PointU16 = ds.MapPoint;
+const MapPoint = ds.MapPoint;
 
 var prng = std.rand.DefaultPrng.init(0);
 
@@ -46,28 +46,47 @@ pub const CmdSystem = struct {
 
 pub const AddCellsCmd = struct {
     radius: u16,
-    pt: PointU16,
+    pt: MapPoint,
     type: CellType,
     density: f32 = 1.0, // 0 to 1
 
     pub fn execute(self: AddCellsCmd, s: *GameState) void {
         const tileRadius: u16 = self.radius / s.tileSize;
-        const topLeft = self.pt.sub(PointU16{ .x = tileRadius, .y = tileRadius });
-        const bottomRight = topLeft.add(PointU16{ .x = 2 * tileRadius + 1, .y = 2 * tileRadius + 1 });
-        for (topLeft.y..bottomRight.y) |y| {
-            for (topLeft.x..bottomRight.x) |x| {
-                if (prng.random().float(f32) <= self.density and
-                    math.pointInCircle(
+        const topLeft = self.pt.sub(MapPoint{
+            .x = @intCast(tileRadius),
+            .y = @intCast(tileRadius),
+        });
+        const bottomRight = topLeft.add(MapPoint{
+            .x = @intCast(2 * tileRadius + 1),
+            .y = @intCast(2 * tileRadius + 1),
+        });
+
+        var y = topLeft.y;
+        while (y < bottomRight.y) : (y += 1) {
+            var x = topLeft.x;
+            while (x < bottomRight.x) : (x += 1) {
+                // ensure x, y are in map bounds
+                if (!(MapPoint{ .x = x, .y = y }).isInRect(0, 0, s.mapWidth, s.mapHeight)) continue;
+                const ux: u16 = @intCast(x);
+                const uy: u16 = @intCast(y);
+
+                if (prng.random().float(f32) > self.density) continue;
+                if (!math.pointInCircle(
                     @floatFromInt(self.pt.x),
                     @floatFromInt(self.pt.y),
                     @floatFromInt(tileRadius),
                     @floatFromInt(x),
                     @floatFromInt(y),
-                ) and s.insideMap(x, y)) {
-                    s.map[y][x].type = self.type;
-                    s.map[y][x].dirty = true;
-                    s.map[y][x].frame = self.type.numFrames();
+                )) {
+                    continue;
                 }
+                if (!s.insideMap(ux, uy)) {
+                    continue;
+                }
+
+                s.map[uy][ux].type = self.type;
+                s.map[uy][ux].dirty = true;
+                s.map[uy][ux].frame = self.type.numFrames();
             }
         }
     }

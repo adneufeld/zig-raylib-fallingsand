@@ -74,8 +74,8 @@ test "DropQueue simple usage" {
     try expectEqual(queue.front(), null);
 }
 
-pub const ScreenPoint = Point(u16);
-pub const MapPoint = Point(u16);
+pub const ScreenPoint = Point(i16);
+pub const MapPoint = Point(i16);
 
 fn Point(comptime T: type) type {
     return struct {
@@ -86,22 +86,33 @@ fn Point(comptime T: type) type {
 
         pub fn sub(self: Self, pt2: Self) Self {
             return Self{
-                .x = self.x - pt2.x,
-                .y = self.y - pt2.y,
+                .x = self.x -% pt2.x,
+                .y = self.y -% pt2.y,
             };
         }
 
         pub fn add(self: Self, pt2: Self) Self {
             return Self{
-                .x = self.x + pt2.x,
-                .y = self.y + pt2.y,
+                .x = self.x +% pt2.x,
+                .y = self.y +% pt2.y,
             };
+        }
+
+        pub fn isInRect(self: Self, x: T, y: T, width: usize, height: usize) bool {
+            const tWidth: T = @intCast(width);
+            const tHeight: T = @intCast(height);
+            return self.x >= x and self.x < x + tWidth and
+                self.y >= y and self.y < y + tHeight;
         }
     };
 }
 
 pub fn screenToMap(tileSize: u8, sPt: ScreenPoint) MapPoint {
-    return MapPoint{ .x = sPt.x / tileSize, .y = sPt.y / tileSize };
+    const iTileSize: i16 = @intCast(tileSize);
+    return MapPoint{
+        .x = @divTrunc(sPt.x, iTileSize),
+        .y = @divTrunc(sPt.y, iTileSize),
+    };
 }
 
 pub fn RingBuffer(comptime T: type, capacity: usize) type {
