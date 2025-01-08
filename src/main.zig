@@ -37,12 +37,12 @@ pub fn main() !void {
 
     //--------------------------------------------------------------------------------------
 
-    var cells = CellularAutomata.init(&game);
-    var uisys = UISystem.init(&game);
-    var cmdsys = CmdSystem.init(&game);
-
     var updatePerfTimer = try perf.RollingStepTimer.init("update");
     var drawPerfTimer = try perf.RollingStepTimer.init("draw");
+
+    var cells = CellularAutomata.init(&game);
+    var uisys = UISystem.init(&game, &updatePerfTimer, &drawPerfTimer);
+    var cmdsys = CmdSystem.init(&game);
 
     while (!rl.windowShouldClose()) { // Detect window close button
         // Input
@@ -91,7 +91,7 @@ pub fn main() !void {
         rl.drawTexturePro(screenTexture, camera, screen, origin, 0.0, rl.Color.white);
 
         // DRAW UI
-        uisys.draw();
+        try uisys.draw();
 
         drawPerfTimer.step();
         //----------------------------------------------------------------------------------

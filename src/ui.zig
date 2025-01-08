@@ -4,11 +4,14 @@ const sim = @import("./sim.zig");
 const cmd = @import("./cmd.zig");
 const ds = @import("./datastructs.zig");
 const state = @import("./state.zig");
+const perf = @import("./perf.zig");
 
 const time = std.time;
 const Instant = time.Instant;
+const Allocator = std.mem.Allocator;
 const CellType = sim.CellType;
 const GameState = state.GameState;
+const RollingStepTimer = perf.RollingStepTimer;
 
 pub const UIState = struct {};
 
@@ -19,6 +22,8 @@ pub const Cursor = enum {
 
 pub const UISystem = struct {
     state: *GameState,
+    updatePerfTimer: *RollingStepTimer,
+    drawPerfTimer: *RollingStepTimer,
 
     drawCursor: bool = false,
     cursorRadius: f32 = 14,
@@ -33,14 +38,17 @@ pub const UISystem = struct {
     keyRepeatNs: u64 = 75 * time.ns_per_ms,
 
     const infoTextSize = 14;
+    const statsTextSize = 14;
     const backgroundColor = rl.Color.init(0, 0, 0, 255 / 2);
     const addDensity = 0.25;
     const fireDensity = 0.25;
     const solidDensity = 1.0;
 
-    pub fn init(s: *GameState) UISystem {
+    pub fn init(s: *GameState, updatePerfTimer: *RollingStepTimer, drawPerfTimer: *RollingStepTimer) UISystem {
         return UISystem{
             .state = s,
+            .updatePerfTimer = updatePerfTimer,
+            .drawPerfTimer = drawPerfTimer,
         };
     }
 
@@ -159,12 +167,13 @@ pub const UISystem = struct {
         }
     }
 
-    pub fn draw(self: *UISystem) void {
+    pub fn draw(self: *UISystem) !void {
         const keyText = "[Ctrl+] Emitter   [S]and   [W]ater   [R]ock   W[o]od   [F]ire   [E]rase   [+][-] Brush Size   [Esc] Clear Cursor";
         const txtLen = rl.measureText(keyText, infoTextSize);
         const textX = self.state.screenWidth / 2 - @divFloor(txtLen, 2);
-        const textY = self.state.screenHeight - infoTextSize;
+        const textY = self.state.screenHeight - infoTextSize - 5;
 
+        // info text background
         rl.drawRectangle(
             textX - 5,
             textY - 5,
@@ -172,6 +181,8 @@ pub const UISystem = struct {
             infoTextSize + 5,
             backgroundColor,
         );
+
+        // info text
         rl.drawText(
             keyText,
             textX,
@@ -179,8 +190,21 @@ pub const UISystem = struct {
             infoTextSize,
             rl.Color.white,
         );
-        rl.drawFPS(0, 0);
 
+        // stats
+        var fpsBuf: [10]u8 = undefined;
+        const fpsTxt = try std.fmt.bufPrintZ(&fpsBuf, "FPS: {}", .{rl.getFPS()});
+        rl.drawText(fpsTxt, 5, 5, statsTextSize, rl.Color.white);
+
+        var updateMsBuf: [20]u8 = undefined;
+        const updateMsTxt = try std.fmt.bufPrintZ(&updateMsBuf, "Update: {d:.2}ms", .{self.updatePerfTimer.average() / time.ns_per_ms});
+        rl.drawText(updateMsTxt, 5, 5 * 2 + statsTextSize, statsTextSize, rl.Color.white);
+
+        var drawMsBuf: [20]u8 = undefined;
+        const drawMsTxt = try std.fmt.bufPrintZ(&drawMsBuf, "Draw: {d:.2}ms", .{self.drawPerfTimer.average() / time.ns_per_ms});
+        rl.drawText(drawMsTxt, 5, 5 * 3 + statsTextSize * 2, statsTextSize, rl.Color.white);
+
+        // cursor
         if (self.drawCursor and rl.isCursorOnScreen()) {
             const mx = rl.getMouseX();
             const my = rl.getMouseY();
